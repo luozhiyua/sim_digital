@@ -43,6 +43,7 @@
               <div class="dashboard-content">
                 <!-- 燃气发电机看板 -->
                 <div v-if="selectedDevice.id === 'generator'" class="dashboard-grid">
+                  <!-- 当前数据 -->
                   <div class="dashboard-item">
                     <div class="item-label">发电Uab</div>
                     <div class="item-value">{{ systemData[currentSystemState].generator.Uab }}</div>
@@ -77,10 +78,28 @@
                       {{ systemData[currentSystemState].generator.gridSwitch }}
                     </div>
                   </div>
+                  <!-- 数字孪生数据 -->
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">效率预测</div>
+                    <div class="item-value">95.2%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">故障概率</div>
+                    <div class="item-value">0.3%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">剩余寿命预测</div>
+                    <div class="item-value">8760h</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">检修倒计时</div>
+                    <div class="item-value">90天</div>
+                  </div>
                 </div>
                 
                 <!-- 溴化锂机组看板 -->
                 <div v-if="selectedDevice.id === 'lithium'" class="dashboard-grid">
+                  <!-- 当前数据 -->
                   <div class="dashboard-item">
                     <div class="item-label">冷水供水温度</div>
                     <div class="item-value">{{ systemData[currentSystemState].lithium.coldInTemp }}</div>
@@ -113,6 +132,23 @@
                     <div class="item-label">蒸发器压力</div>
                     <div class="item-value">{{ systemData[currentSystemState].lithium.evaporatorPress }}</div>
                   </div>
+                  <!-- 数字孪生数据 -->
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">效率预测</div>
+                    <div class="item-value">86.5%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">故障概率</div>
+                    <div class="item-value">0.5%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">检修倒计时</div>
+                    <div class="item-value">78天</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">能耗预测</div>
+                    <div class="item-value">235kWh/日</div>
+                  </div>
                 </div>
                 
                 <!-- 电网系统看板 -->
@@ -135,6 +171,23 @@
                       {{ currentSystemState === 'running' ? '运行中' : '已停机' }}
                     </div>
                   </div>
+                  <!-- 数字孪生数据 -->
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">负载预测</div>
+                    <div class="item-value">85.3%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">故障概率</div>
+                    <div class="item-value">0.2%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">电压稳定性预测</div>
+                    <div class="item-value">优</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">检修倒计时</div>
+                    <div class="item-value">120天</div>
+                  </div>
                 </div>
                 
                 <!-- 水泵看板 -->
@@ -145,15 +198,11 @@
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">水泵流量</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '120m³/h' : '0m³/h' }}</div>
+                    <div class="item-value">{{ currentSystemState === 'running' ? '13.58m³/h' : '0m³/h' }}</div>
                   </div>
                   <div class="dashboard-item">
-                    <div class="item-label">水泵电流</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '35.2A' : '0A' }}</div>
-                  </div>
-                  <div class="dashboard-item">
-                    <div class="item-label">水泵温度</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '42.5℃' : '环境温度' }}</div>
+                    <div class="item-label">总流量</div>
+                    <div class="item-value">44991.008m³</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">水泵状态</div>
@@ -164,6 +213,23 @@
                   <div class="dashboard-item">
                     <div class="item-label">累计运行时间</div>
                     <div class="item-value">1682.5h</div>
+                  </div>
+                  <!-- 数字孪生数据 -->
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">效率预测</div>
+                    <div class="item-value">92.5%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">故障概率</div>
+                    <div class="item-value">0.8%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">剩余寿命预测</div>
+                    <div class="item-value">5280h</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">检修倒计时</div>
+                    <div class="item-value">45天</div>
                   </div>
                 </div>
                 
@@ -194,6 +260,168 @@
                   <div class="dashboard-item">
                     <div class="item-label">制冷量</div>
                     <div class="item-value">{{ currentSystemState === 'running' ? '120kW' : '0kW' }}</div>
+                  </div>
+                  <!-- 数字孪生数据 -->
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">效率预测</div>
+                    <div class="item-value">89.7%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">能耗预测</div>
+                    <div class="item-value">145kWh/日</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">滤网更换提醒</div>
+                    <div class="item-value">23天</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">故障概率</div>
+                    <div class="item-value">1.5%</div>
+                  </div>
+                </div>
+                
+                <!-- 管道节点1看板 -->
+                <div v-if="selectedDevice.id === 'pipeNode1'" class="dashboard-grid">
+                  <div class="dashboard-item">
+                    <div class="item-label">流量</div>
+                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                      {{ currentSystemState === 'running' ? '12.5 m³/h' : '0 m³/h' }}
+                    </div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">流速</div>
+                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                      {{ currentSystemState === 'running' ? '1.8 m/s' : '0 m/s' }}
+                    </div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">压力</div>
+                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                      {{ currentSystemState === 'running' ? '1.2 MPa' : '0 MPa' }}
+                    </div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">泄露预测</div>
+                    <div class="item-value">0.0 m³/min</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">距离管道检修</div>
+                    <div class="item-value">305 天</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">距离管道清洗</div>
+                    <div class="item-value">265 天</div>
+                  </div>
+                </div>
+                
+                <!-- 管道节点2看板 -->
+                <div v-if="selectedDevice.id === 'pipeNode2'" class="dashboard-grid">
+                  <div class="dashboard-item">
+                    <div class="item-label">流量</div>
+                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                      {{ currentSystemState === 'running' ? '10.8 m³/h' : '0 m³/h' }}
+                    </div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">流速</div>
+                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                      {{ currentSystemState === 'running' ? '1.5 m/s' : '0 m/s' }}
+                    </div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">压力</div>
+                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                      {{ currentSystemState === 'running' ? '1.0 MPa' : '0 MPa' }}
+                    </div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">泄露预测</div>
+                    <div class="item-value">0.0 m³/min</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">距离管道检修</div>
+                    <div class="item-value">305 天</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">距离管道清洗</div>
+                    <div class="item-value">265 天</div>
+                  </div>
+                </div>
+                
+                <!-- 管道节点3看板 -->
+                <div v-if="selectedDevice.id === 'pipeNode3'" class="dashboard-grid">
+                  <div class="dashboard-item">
+                    <div class="item-label">流量</div>
+                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                      {{ currentSystemState === 'running' ? '11.2 m³/h' : '0 m³/h' }}
+                    </div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">流速</div>
+                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                      {{ currentSystemState === 'running' ? '1.6 m/s' : '0 m/s' }}
+                    </div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">压力</div>
+                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                      {{ currentSystemState === 'running' ? '1.1 MPa' : '0 MPa' }}
+                    </div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">泄露预测</div>
+                    <div class="item-value">0.0 m³/min</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">距离管道检修</div>
+                    <div class="item-value">305 天</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">距离管道清洗</div>
+                    <div class="item-value">265 天</div>
+                  </div>
+                </div>
+                
+                <!-- 水泵2看板 -->
+                <div v-if="selectedDevice.id === 'waterPump2'" class="dashboard-grid">
+                  <div class="dashboard-item">
+                    <div class="item-label">水泵出口压力</div>
+                    <div class="item-value">{{ currentSystemState === 'running' ? '0.42MPa' : '0MPa' }}</div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">水泵流量</div>
+                    <div class="item-value">{{ currentSystemState === 'running' ? '13.58m³/h' : '0m³/h' }}</div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">总流量</div>
+                    <div class="item-value">44991.008m³</div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">水泵状态</div>
+                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                      {{ currentSystemState === 'running' ? '运行中' : '已停机' }}
+                    </div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">累计运行时间</div>
+                    <div class="item-value">1265.8h</div>
+                  </div>
+                  <!-- 数字孪生数据 -->
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">效率预测</div>
+                    <div class="item-value">91.2%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">故障概率</div>
+                    <div class="item-value">1.2%</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">剩余寿命预测</div>
+                    <div class="item-value">6120h</div>
+                  </div>
+                  <div class="dashboard-item twin-data">
+                    <div class="item-label">检修倒计时</div>
+                    <div class="item-value">58天</div>
                   </div>
                 </div>
               </div>
@@ -328,7 +556,45 @@
         <div class="data-lists-container">
           <!-- 燃气发电机数据（含市电+发电参数） -->
           <div class="data-list">
-            <h3 class="list-title">燃气发电机实时数据</h3>
+            <h3 class="list-title">燃气发电机信息</h3>
+            <div class="data-item">
+              <span class="data-label">型号/转速</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.model }}/{{ systemData[currentSystemState].generator.speed }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">流量/扬程</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.flowRate }}/{{ systemData[currentSystemState].generator.head }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">汽蚀余量/电压</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.npsh }}/{{ systemData[currentSystemState].generator.voltage }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">频率/压力</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.frequency }}/{{ systemData[currentSystemState].generator.pressure }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">电流/功率</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.current }}/{{ systemData[currentSystemState].generator.power }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">热分级/启动电流</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.thermalClass }}/{{ systemData[currentSystemState].generator.startingCurrent }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">相数/最高温度</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.phase }}/{{ systemData[currentSystemState].generator.maxTemp }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">防护等级/重量</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.protectionClass }}/{{ systemData[currentSystemState].generator.weight }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">出厂日期</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.factoryDate }}</span>
+            </div>
+            
+            <h3 class="list-title">实时运行数据</h3>
             <!-- 市电电压 -->
             <div class="data-item">
               <span class="data-label">市电Uab</span>
@@ -377,10 +643,88 @@
                 {{ systemData[currentSystemState].generator.gridSwitch }}
               </span>
             </div>
+            
+            <h3 class="list-title">数字孪生数据</h3>
+            <div class="data-item">
+              <span class="data-label">效率预测</span>
+              <span class="data-value" :class="systemData[currentSystemState].generator.efficiencyPredict.includes('9') ? 'normal' : 'warning'">
+                {{ systemData[currentSystemState].generator.efficiencyPredict }}
+              </span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">检修倒计时</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.maintenanceCountdown }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">故障风险</span>
+              <span class="data-value" :class="systemData[currentSystemState].generator.faultRisk === '低' ? 'normal' : 'abnormal'">
+                {{ systemData[currentSystemState].generator.faultRisk }}
+              </span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">剩余寿命预测</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.lifetimePredict }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">振动水平</span>
+              <span class="data-value" :class="systemData[currentSystemState].generator.vibrationLevel === '正常' ? 'normal' : 'warning'">
+                {{ systemData[currentSystemState].generator.vibrationLevel }}
+              </span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">噪音水平</span>
+              <span class="data-value">{{ systemData[currentSystemState].generator.noiseLevel }}</span>
+            </div>
+            <div class="data-item" v-if="currentSystemState === 'running'">
+              <span class="data-label">性能趋势</span>
+              <span class="data-value" :class="systemData[currentSystemState].generator.performanceTrend === '良好' ? 'normal' : 'warning'">
+                {{ systemData[currentSystemState].generator.performanceTrend }}
+              </span>
+            </div>
+            <div class="data-item" v-if="currentSystemState === 'running'">
+              <span class="data-label">节能率</span>
+              <span class="data-value" :class="systemData[currentSystemState].generator.energySavingRate.includes('12') ? 'normal' : 'warning'">
+                {{ systemData[currentSystemState].generator.energySavingRate }}
+              </span>
+            </div>
           </div>
           <!-- 溴化锂机组数据 -->
           <div class="data-list">
-            <h3 class="list-title">溴化锂机组实时数据</h3>
+            <h3 class="list-title">溴化锂机组信息</h3>
+            <div class="data-item">
+              <span class="data-label">机组型号</span>
+              <span class="data-value">{{ systemData[currentSystemState].lithium.model }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">制冷/制热量</span>
+              <span class="data-value">{{ systemData[currentSystemState].lithium.coolingCapacity }}/{{ systemData[currentSystemState].lithium.heatingCapacity }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">冷/热水流量</span>
+              <span class="data-value">{{ systemData[currentSystemState].lithium.coldWaterFlow }}/{{ systemData[currentSystemState].lithium.hotWaterFlow }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">冷/热水出口温度</span>
+              <span class="data-value">{{ systemData[currentSystemState].lithium.coldWaterTemp }}/{{ systemData[currentSystemState].lithium.hotWaterTemp }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">冷却水流量/进口温度</span>
+              <span class="data-value">{{ systemData[currentSystemState].lithium.coolingWaterFlow }}/{{ systemData[currentSystemState].lithium.coolingWaterInTemp }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">烟气耗量/进口温度</span>
+              <span class="data-value">{{ systemData[currentSystemState].lithium.exhaustGasConsumption }}/{{ systemData[currentSystemState].lithium.exhaustGasInTemp }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">配电量/电源</span>
+              <span class="data-value">{{ systemData[currentSystemState].lithium.powerConsumption }}/{{ systemData[currentSystemState].lithium.powerSupply }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">生产编号/制造日期</span>
+              <span class="data-value">{{ systemData[currentSystemState].lithium.productionNumber }}/{{ systemData[currentSystemState].lithium.manufactureDate }}</span>
+            </div>
+            
+            <h3 class="list-title">实时运行数据</h3>
             <div class="data-item">
               <span class="data-label">冷水供水温度</span>
               <span class="data-value">{{ systemData[currentSystemState].lithium.coldInTemp }}</span>
@@ -417,6 +761,40 @@
               <span class="data-label">溴化锂启动状态</span>
               <span class="data-value" :class="systemData[currentSystemState].lithium.startState === '启动' ? 'normal' : 'abnormal'">
                 {{ systemData[currentSystemState].lithium.startState }}
+              </span>
+            </div>
+            
+            <h3 class="list-title">数字孪生数据</h3>
+            <div class="data-item">
+              <span class="data-label">效率预测</span>
+              <span class="data-value" :class="systemData[currentSystemState].lithium.efficiencyPredict.includes('9') ? 'normal' : 'warning'">
+                {{ systemData[currentSystemState].lithium.efficiencyPredict }}
+              </span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">检修倒计时</span>
+              <span class="data-value">{{ systemData[currentSystemState].lithium.maintenanceCountdown }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">故障风险</span>
+              <span class="data-value" :class="systemData[currentSystemState].lithium.faultRisk === '低' ? 'normal' : 'abnormal'">
+                {{ systemData[currentSystemState].lithium.faultRisk }}
+              </span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">剩余寿命预测</span>
+              <span class="data-value">{{ systemData[currentSystemState].lithium.lifetimePredict }}</span>
+            </div>
+            <div class="data-item" v-if="currentSystemState === 'running'">
+              <span class="data-label">性能趋势</span>
+              <span class="data-value" :class="systemData[currentSystemState].lithium.performanceTrend === '良好' ? 'normal' : 'warning'">
+                {{ systemData[currentSystemState].lithium.performanceTrend }}
+              </span>
+            </div>
+            <div class="data-item" v-if="currentSystemState === 'running'">
+              <span class="data-label">节能率</span>
+              <span class="data-value" :class="systemData[currentSystemState].lithium.energySavingRate.includes('15') ? 'normal' : 'warning'">
+                {{ systemData[currentSystemState].lithium.energySavingRate }}
               </span>
             </div>
             <!-- 累计数据 -->
@@ -721,7 +1099,7 @@ export default {
         },
         {
           id: 'waterPump',
-          name: '水泵',
+          name: '水泵1',
           position: { x: 2, y: 0.1, z: 3 },
           visible: true,
           dataSource: 'waterPump'
@@ -732,6 +1110,36 @@ export default {
           position: { x: -4.5, y: 0.1, z: -10 },
           visible: true,
           dataSource: 'airCooler'
+        },
+        // 管道关键节点按钮
+        {
+          id: 'pipeNode1',
+          name: '管道节点1',
+          position: { x: 1, y: 0.1, z: 0},
+          visible: true,
+          dataSource: 'pipeNode1'
+        },
+        {
+          id: 'pipeNode2',
+          name: '管道节点2',
+          position: { x: 0, y: 0.1, z: -2 },
+          visible: true,
+          dataSource: 'pipeNode2'
+        },
+        {
+          id: 'pipeNode3',
+          name: '管道节点3',
+          position: { x: -1, y: 0.1, z: -7 },
+          visible: true,
+          dataSource: 'pipeNode3'
+        },
+        // 新水泵按钮
+        {
+          id: 'waterPump2',
+          name: '水泵2',
+          position: { x: 0, y: 0.1, z: -4.5 },
+          visible: true,
+          dataSource: 'waterPump2'
         }
       ],
       // 当前选中的设备
@@ -782,24 +1190,63 @@ export default {
             Uca: '399.9v'
           },
           generator: {
+            model: 'MODEL-NP89',
+            speed: '2900 r/min',
+            flowRate: '7m³/h',
+            head: '14m',
+            npsh: '0.15',
+            voltage: '380v',
+            frequency: '50hz',
+            pressure: '0.5mpa',
+            current: '6.1a',
+            power: '2.2kw',
+            thermalClass: 'CL',
+            startingCurrent: '23a',
+            phase: '3PHASE',
+            maxTemp: '<=110℃',
+            protectionClass: 'IP54',
+            weight: '48kg',
+            factoryDate: '202312',
             Uab: '0.0v',
-            UabValue: 0.0, // 用于计算进度条（纯数值）
+            UabValue: 0.0,
             currentA: '0.0A',
             currentAValue: 0.0,
             powerTotal: '0.0kw',
             powerTotalValue: 0.0,
             reactiveTotal: '0.0kvar',
-            frequency: '0.0Hz',
+           
             frequencyValue: 0.0,
-            speed: '0.0 r/min',
+
             exhaustTemp: '18.5℃',
             gridSwitch: '分闸',
             totalPower: '129568.5 kwh',
-            totalGas: '15234.2 m³'
+            totalGas: '15234.2 m³',
+            // 数字孪生数据
+            efficiencyPredict: '94.2%',
+            maintenanceCountdown: '2136h',
+            faultRisk: '低',
+            lifetimePredict: '92300h',
+            vibrationLevel: '正常',
+            noiseLevel: '65dB'
           },
           lithium: {
+            model: 'Y（309/145）-12（32/38）（12/7）',
+            coolingCapacity: '120kw',
+            heatingCapacity: '85kw',
+            coldWaterFlow: '20.6m³/h',
+            hotWaterFlow: '14.6m³/h',
+            coldWaterTemp: '7℃',
+            hotWaterTemp: '60℃',
+            coolingWaterFlow: '31.2m³/h',
+            coolingWaterInTemp: '32℃',
+            exhaustGasConsumption: '1764kg/h',
+            exhaustGasInTemp: '309℃',
+            powerConsumption: '4.25kw',
+            powerSupply: '380v/3ph/50hz',
+            productionNumber: 'Y10-02966',
+            manufactureDate: '2024.01',
             coldInTemp: '17.8℃',
-            coldInTempValue: 17.8, // 用于计算进度条（纯数值）
+            coldInTempValue: 17.8,
             coldOutTemp: '18.1℃',
             smokeInTemp: '18.0℃',
             smokeInTempValue: 18.0,
@@ -807,8 +1254,13 @@ export default {
             coolInTemp: '18.2℃',
             coolOutTemp: '17.6℃',
             evaporatorTemp: '16.6℃',
-            evaporatorPress: '16.9kPa', // 修正Excel笔误（温度单位应为压力单位）
-            startState: '启动' // 停机时溴化锂为启动状态（对应Excel）
+            evaporatorPress: '16.9kPa',
+            startState: '启动',
+            // 数字孪生数据
+            efficiencyPredict: '92.5%',
+            maintenanceCountdown: '1286h',
+            faultRisk: '低',
+            lifetimePredict: '86500h'
           }
         },
         // 系统运行数据
@@ -819,6 +1271,23 @@ export default {
             Uca: '399.5v'
           },
           generator: {
+            model: 'MODEL-NP89',
+            speed: '2900 r/min',
+            flowRate: '7m³/h',
+            head: '14m',
+            npsh: '0.15',
+            voltage: '380v',
+            frequency: '50hz',
+            pressure: '0.5mpa',
+            current: '6.1a',
+            power: '2.2kw',
+            thermalClass: 'CL',
+            startingCurrent: '23a',
+            phase: '3PHASE',
+            maxTemp: '<=110℃',
+            protectionClass: 'IP54',
+            weight: '48kg',
+            factoryDate: '202312',
             Uab: '401.0v',
             UabValue: 401.0,
             currentA: '80.9A',
@@ -826,27 +1295,58 @@ export default {
             powerTotal: '55.7kw',
             powerTotalValue: 55.7,
             reactiveTotal: '16.8kvar',
-            frequency: '49.9Hz',
+
             frequencyValue: 49.9,
-            speed: '2998.0 r/min',
+
             exhaustTemp: '418.5℃',
             gridSwitch: '合闸',
             totalPower: '130012.5 kwh',
-            totalGas: '15265.2 m³'
+            totalGas: '15265.2 m³',
+            // 数字孪生数据
+            efficiencyPredict: '95.6%',
+            maintenanceCountdown: '2135.8h',
+            faultRisk: '低',
+            lifetimePredict: '92299.6h',
+            vibrationLevel: '正常',
+            noiseLevel: '68dB',
+            performanceTrend: '良好',
+            energySavingRate: '12.8%'
           },
           lithium: {
+            model: 'Y（309/145）-12（32/38）（12/7）',
+            coolingCapacity: '120kw',
+            heatingCapacity: '85kw',
+            coldWaterFlow: '20.6m³/h',
+            hotWaterFlow: '14.6m³/h',
+            coldWaterTemp: '7℃',
+            hotWaterTemp: '60℃',
+            coolingWaterFlow: '31.2m³/h',
+            coolingWaterInTemp: '32℃',
+            exhaustGasConsumption: '1764kg/h',
+            exhaustGasInTemp: '309℃',
+            powerConsumption: '4.25kw',
+            powerSupply: '380v/3ph/50hz',
+            productionNumber: 'Y10-02966',
+            manufactureDate: '2024.01',
             coldInTemp: '8.5℃',
             coldInTempValue: 8.5,
             coldOutTemp: '12.6℃',
             smokeInTemp: '288.8℃',
             smokeInTempValue: 288.8,
             smokeOutTemp: '65.5℃',
-            smokeOutTempValue: 65.5, // 用于计算进度条（纯数值）
+            smokeOutTempValue: 65.5,
             coolInTemp: '29.0℃',
             coolOutTemp: '25.6℃',
             evaporatorTemp: '6.5℃',
             evaporatorPress: '0.69Mpa',
-            startState: '停机' // 运行时溴化锂为停机状态（对应Excel）
+            startState: '停机',
+            // 数字孪生数据
+            efficiencyPredict: '93.8%',
+            maintenanceCountdown: '1285.5h',
+            faultRisk: '低',
+            lifetimePredict: '86499.5h',
+            performanceTrend: '良好',
+            energySavingRate: '15.2%'
           }
         }
       }
@@ -1539,6 +2039,11 @@ loader.load(
 }
 </script>
 <style scoped>
+/* 数字孪生数据样式 */
+.dashboard-item.twin-data .item-value {
+  color: #4fc3f7;
+  font-weight: bold;
+}
 /* 淡色调主题样式 */
 .dashboard-container {
   width: 100%;
@@ -1612,7 +2117,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(4px);
+  /* backdrop-filter: blur(4px); */
 }
 
 .device-dashboard {
@@ -1794,7 +2299,7 @@ body {
   border: 1px solid rgba(66, 133, 244, 0.3);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(5px);
+  /* backdrop-filter: blur(5px); */
   margin-bottom: 30px;
   width: 100%;
   max-width: 220px;
@@ -2373,7 +2878,7 @@ body {
   border-radius: 6px;
   padding: 8px 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(5px);
+  /* backdrop-filter: blur(5px); */
 }
 
 .data-value {
