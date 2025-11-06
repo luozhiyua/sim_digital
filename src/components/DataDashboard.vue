@@ -46,54 +46,54 @@
                   <!-- 当前数据 -->
                   <div class="dashboard-item">
                     <div class="item-label">发电Uab</div>
-                    <div class="item-value">{{ systemData[currentSystemState].generator.Uab }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].generator.Uab }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">A相电流</div>
-                    <div class="item-value">{{ systemData[currentSystemState].generator.currentA }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].generator.currentA }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">总有功功率</div>
-                    <div class="item-value">{{ systemData[currentSystemState].generator.powerTotal }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].generator.powerTotal }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">总无功功率</div>
-                    <div class="item-value">{{ systemData[currentSystemState].generator.reactiveTotal }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].generator.reactiveTotal }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">发电频率</div>
-                    <div class="item-value">{{ systemData[currentSystemState].generator.frequency }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].generator.frequency }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">发电机转速</div>
-                    <div class="item-value">{{ systemData[currentSystemState].generator.speed }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].generator.speed }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">排气温度</div>
-                    <div class="item-value">{{ systemData[currentSystemState].generator.exhaustTemp }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].generator.exhaustTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">并网开关状态</div>
-                    <div class="item-value" :class="systemData[currentSystemState].generator.gridSwitch === '合闸' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="systemData[currentSystemState].generator.gridSwitch === '合闸' ? 'normal' : 'abnormal'">
                       {{ systemData[currentSystemState].generator.gridSwitch }}
                     </div>
                   </div>
                   <!-- 数字孪生数据 -->
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">效率预测</div>
-                    <div class="item-value">95.2%</div>
+                    <div class="item-value digital-twin">95.2%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">故障概率</div>
-                    <div class="item-value">0.3%</div>
+                    <div class="item-value digital-twin">0.3%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">剩余寿命预测</div>
-                    <div class="item-value">8760h</div>
+                    <div class="item-value digital-twin">8760h</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">检修倒计时</div>
-                    <div class="item-value">90天</div>
+                    <div class="item-value predicted">90天</div>
                   </div>
                 </div>
                 
@@ -118,36 +118,37 @@
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">冷却水供水温度</div>
-                    <div class="item-value">{{ systemData[currentSystemState].lithium.coolInTemp }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].lithium.coolInTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">冷却水回水温度</div>
-                    <div class="item-value">{{ systemData[currentSystemState].lithium.coolOutTemp }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].lithium.coolOutTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">蒸发器温度</div>
-                    <div class="item-value">{{ systemData[currentSystemState].lithium.evaporatorTemp }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].lithium.evaporatorTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">蒸发器压力</div>
-                    <div class="item-value">{{ systemData[currentSystemState].lithium.evaporatorPress }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].lithium.evaporatorPress }}</div>
                   </div>
                   <!-- 数字孪生数据 -->
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">效率预测</div>
-                    <div class="item-value">86.5%</div>
+                    <div class="item-value digital-twin">86.5%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">故障概率</div>
-                    <div class="item-value">0.5%</div>
+                    <div class="item-value digital-twin">0.5%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
-                    <div class="item-label">检修倒计时</div>
-                    <div class="item-value">78天</div>
-                  </div>
-                  <div class="dashboard-item twin-data">
+
+                  <div class="dashboard-item">
                     <div class="item-label">能耗预测</div>
-                    <div class="item-value">235kWh/日</div>
+                    <div class="item-value digital-twin">235kWh/日</div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">检修倒计时</div>
+                    <div class="item-value predicted">78天</div>
                   </div>
                 </div>
                 
@@ -155,38 +156,38 @@
                 <div v-if="selectedDevice.id === 'powerGrid'" class="dashboard-grid">
                   <div class="dashboard-item">
                     <div class="item-label">市电Uab</div>
-                    <div class="item-value">{{ systemData[currentSystemState].powerGrid.Uab }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].powerGrid.Uab }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">市电Ubc</div>
-                    <div class="item-value">{{ systemData[currentSystemState].powerGrid.Ubc }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].powerGrid.Ubc }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">市电Uca</div>
-                    <div class="item-value">{{ systemData[currentSystemState].powerGrid.Uca }}</div>
+                    <div class="item-value measured">{{ systemData[currentSystemState].powerGrid.Uca }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">系统状态</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '运行中' : '已停机' }}
                     </div>
                   </div>
                   <!-- 数字孪生数据 -->
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">负载预测</div>
-                    <div class="item-value">85.3%</div>
+                    <div class="item-value digital-twin">85.3%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">故障概率</div>
-                    <div class="item-value">0.2%</div>
+                    <div class="item-value digital-twin">0.2%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">电压稳定性预测</div>
-                    <div class="item-value">优</div>
+                    <div class="item-value digital-twin">优</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">检修倒计时</div>
-                    <div class="item-value">120天</div>
+                    <div class="item-value predicted">120天</div>
                   </div>
                 </div>
                 
@@ -194,42 +195,42 @@
                 <div v-if="selectedDevice.id === 'waterPump'" class="dashboard-grid">
                   <div class="dashboard-item">
                     <div class="item-label">水泵出口压力</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '0.45MPa' : '0MPa' }}</div>
+                    <div class="item-value measured">{{ currentSystemState === 'running' ? '0.45MPa' : '0MPa' }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">水泵流量</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '13.58m³/h' : '0m³/h' }}</div>
+                    <div class="item-value measured">{{ currentSystemState === 'running' ? '13.58m³/h' : '0m³/h' }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">总流量</div>
-                    <div class="item-value">44991.008m³</div>
+                    <div class="item-value measured">44991.008m³</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">水泵状态</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '运行中' : '已停机' }}
                     </div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">累计运行时间</div>
-                    <div class="item-value">1682.5h</div>
+                    <div class="item-value measured">1682.5h</div>
                   </div>
                   <!-- 数字孪生数据 -->
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">效率预测</div>
-                    <div class="item-value">92.5%</div>
+                    <div class="item-value digital-twin">92.5%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">故障概率</div>
-                    <div class="item-value">0.8%</div>
+                    <div class="item-value digital-twin">0.8%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">剩余寿命预测</div>
-                    <div class="item-value">5280h</div>
+                    <div class="item-value digital-twin">5280h</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">检修倒计时</div>
-                    <div class="item-value">45天</div>
+                    <div class="item-value predicted">45天</div>
                   </div>
                 </div>
                 
@@ -237,80 +238,81 @@
                 <div v-if="selectedDevice.id === 'airCooler'" class="dashboard-grid">
                   <div class="dashboard-item">
                     <div class="item-label">进风温度</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '28.5℃' : '环境温度' }}</div>
+                    <div class="item-value measured">{{ currentSystemState === 'running' ? '28.5℃' : '环境温度' }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">出风温度</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '18.2℃' : '环境温度' }}</div>
+                    <div class="item-value measured">{{ currentSystemState === 'running' ? '18.2℃' : '环境温度' }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">风机转速</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '1450rpm' : '0rpm' }}</div>
+                    <div class="item-value measured">{{ currentSystemState === 'running' ? '1450rpm' : '0rpm' }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">风机电流</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '12.8A' : '0A' }}</div>
+                    <div class="item-value measured">{{ currentSystemState === 'running' ? '12.8A' : '0A' }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">设备状态</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '运行中' : '已停机' }}
                     </div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">制冷量</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '120kW' : '0kW' }}</div>
+                    <div class="item-value measured">{{ currentSystemState === 'running' ? '120kW' : '0kW' }}</div>
                   </div>
                   <!-- 数字孪生数据 -->
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">效率预测</div>
-                    <div class="item-value">89.7%</div>
+                    <div class="item-value digital-twin">89.7%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">能耗预测</div>
-                    <div class="item-value">145kWh/日</div>
+                    <div class="item-value digital-twin">145kWh/日</div>
                   </div>
-                  <div class="dashboard-item twin-data">
-                    <div class="item-label">滤网更换提醒</div>
-                    <div class="item-value">23天</div>
-                  </div>
-                  <div class="dashboard-item twin-data">
+
+                  <div class="dashboard-item">
                     <div class="item-label">故障概率</div>
-                    <div class="item-value">1.5%</div>
+                    <div class="item-value digital-twin">1.5%</div>
                   </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">滤网更换提醒</div>
+                    <div class="item-value predicted">23天</div>
+                  </div>                  
                 </div>
                 
                 <!-- 管道节点1看板 -->
                 <div v-if="selectedDevice.id === 'pipeNode1'" class="dashboard-grid">
                   <div class="dashboard-item">
                     <div class="item-label">流量</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '12.5 m³/h' : '0 m³/h' }}
                     </div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">流速</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '1.8 m/s' : '0 m/s' }}
                     </div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">压力</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '1.2 MPa' : '0 MPa' }}
                     </div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">泄露预测</div>
-                    <div class="item-value">0.0 m³/min</div>
+                    <div class="item-value digital-twin">0.0 m³/min</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">距离管道检修</div>
-                    <div class="item-value">305 天</div>
+                    <div class="item-value predicted">305 天</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">距离管道清洗</div>
-                    <div class="item-value">265 天</div>
+                    <div class="item-value predicted">265 天</div>
                   </div>
                 </div>
                 
@@ -318,33 +320,33 @@
                 <div v-if="selectedDevice.id === 'pipeNode2'" class="dashboard-grid">
                   <div class="dashboard-item">
                     <div class="item-label">流量</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '10.8 m³/h' : '0 m³/h' }}
                     </div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">流速</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '1.5 m/s' : '0 m/s' }}
                     </div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">压力</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '1.0 MPa' : '0 MPa' }}
                     </div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">泄露预测</div>
-                    <div class="item-value">0.0 m³/min</div>
+                    <div class="item-value digital-twin">0.0 m³/min</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">距离管道检修</div>
-                    <div class="item-value">305 天</div>
+                    <div class="item-value predicted">305 天</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">距离管道清洗</div>
-                    <div class="item-value">265 天</div>
+                    <div class="item-value predicted">265 天</div>
                   </div>
                 </div>
                 
@@ -352,33 +354,33 @@
                 <div v-if="selectedDevice.id === 'pipeNode3'" class="dashboard-grid">
                   <div class="dashboard-item">
                     <div class="item-label">流量</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '11.2 m³/h' : '0 m³/h' }}
                     </div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">流速</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '1.6 m/s' : '0 m/s' }}
                     </div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">压力</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '1.1 MPa' : '0 MPa' }}
                     </div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">泄露预测</div>
-                    <div class="item-value">0.0 m³/min</div>
+                    <div class="item-value digital-twin">0.0 m³/min</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">距离管道检修</div>
-                    <div class="item-value">305 天</div>
+                    <div class="item-value predicted">305 天</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">距离管道清洗</div>
-                    <div class="item-value">265 天</div>
+                    <div class="item-value predicted">265 天</div>
                   </div>
                 </div>
                 
@@ -386,42 +388,42 @@
                 <div v-if="selectedDevice.id === 'waterPump2'" class="dashboard-grid">
                   <div class="dashboard-item">
                     <div class="item-label">水泵出口压力</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '0.42MPa' : '0MPa' }}</div>
+                    <div class="item-value measured">{{ currentSystemState === 'running' ? '0.42MPa' : '0MPa' }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">水泵流量</div>
-                    <div class="item-value">{{ currentSystemState === 'running' ? '13.58m³/h' : '0m³/h' }}</div>
+                    <div class="item-value measured">{{ currentSystemState === 'running' ? '13.58m³/h' : '0m³/h' }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">总流量</div>
-                    <div class="item-value">44991.008m³</div>
+                    <div class="item-value measured">44991.008m³</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">水泵状态</div>
-                    <div class="item-value" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
+                    <div class="item-value measured" :class="currentSystemState === 'running' ? 'normal' : 'abnormal'">
                       {{ currentSystemState === 'running' ? '运行中' : '已停机' }}
                     </div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">累计运行时间</div>
-                    <div class="item-value">1265.8h</div>
+                    <div class="item-value measured">1265.8h</div>
                   </div>
                   <!-- 数字孪生数据 -->
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">效率预测</div>
-                    <div class="item-value">91.2%</div>
+                    <div class="item-value digital-twin">91.2%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">故障概率</div>
-                    <div class="item-value">1.2%</div>
+                    <div class="item-value digital-twin">1.2%</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">剩余寿命预测</div>
-                    <div class="item-value">6120h</div>
+                    <div class="item-value digital-twin">6120h</div>
                   </div>
-                  <div class="dashboard-item twin-data">
+                  <div class="dashboard-item">
                     <div class="item-label">检修倒计时</div>
-                    <div class="item-value">58天</div>
+                    <div class="item-value predicted">58天</div>
                   </div>
                 </div>
               </div>
@@ -2040,10 +2042,7 @@ loader.load(
 </script>
 <style scoped>
 /* 数字孪生数据样式 */
-.dashboard-item.twin-data .item-value {
-  color: #4fc3f7;
-  font-weight: bold;
-}
+/* 旧的twin-data样式已移除，使用更具体的数据类型样式 */
 /* 淡色调主题样式 */
 .dashboard-container {
   width: 100%;
@@ -2221,6 +2220,21 @@ body {
 
 .item-value.abnormal {
   color: #ef4444;
+}
+
+/* 数据类型样式 */
+.item-value.measured {
+  color: #2c3e50; /* 黑色 - 实测值 */
+}
+
+.item-value.predicted {
+  color: #4fc3f7; /* 蓝色 - 预测值 */
+  font-weight: bold;
+}
+
+.item-value.digital-twin {
+  color: #4caf50; /* 绿色 - 孪生数据 */
+  font-weight: bold;
 }
 
 .dashboard-footer {
