@@ -39,39 +39,69 @@
         <div class="params-grid">
           <div class="param-group">
             <label class="param-label">发电优先级（微燃机）</label>
-            <input type="range" min="0" max="100" v-model="powerPriority" class="param-slider">
-            <span class="param-value">{{ powerPriority }}%</span>
+            <input type="range" min="0" max="100" v-model="powerPriorityTmp" class="param-slider">
+            <span class="param-value">{{ powerPriorityTmp }}%</span>
           </div>
           <div class="param-group">
             <label class="param-label">制冷优先级（溴化锂机组）</label>
-            <input type="range" min="0" max="100" v-model="coolingPriority" class="param-slider">
-            <span class="param-value">{{ coolingPriority }}%</span>
+            <input type="range" min="0" max="100" v-model="coolingPriorityTmp" class="param-slider">
+            <span class="param-value">{{ coolingPriorityTmp }}%</span>
           </div>
           <div class="param-group">
             <label class="param-label">制热优先级（热回收系统）</label>
-            <input type="range" min="0" max="100" v-model="heatingPriority" class="param-slider">
-            <span class="param-value">{{ heatingPriority }}%</span>
+            <input type="range" min="0" max="100" v-model="heatingPriorityTmp" class="param-slider">
+            <span class="param-value">{{ heatingPriorityTmp }}%</span>
           </div>
           <div class="param-group">
             <label class="param-label">燃气消耗限制（微燃机）</label>
-            <input type="range" min="50" max="150" v-model="gasLimit" class="param-slider">
-            <span class="param-value">{{ gasLimit }} m³/h</span>
+            <input type="range" min="50" max="150" v-model="gasLimitTmp" class="param-slider">
+            <span class="param-value">{{ gasLimitTmp }} m³/h</span>
           </div>
           <div class="param-group">
             <label class="param-label">水泵流量设定</label>
-            <input type="range" min="50" max="100" v-model="pumpFlow" class="param-slider">
-            <span class="param-value">{{ pumpFlow }}%</span>
+            <input type="range" min="50" max="100" v-model="pumpFlowTmp" class="param-slider">
+            <span class="param-value">{{ pumpFlowTmp }}%</span>
           </div>
           <div class="param-group">
             <label class="param-label">烟气设定温度</label>
-            <input type="range" min="280" max="300" v-model="smokeTemp" class="param-slider">
-            <span class="param-value">{{ smokeTemp }}°C</span>
+            <input type="range" min="280" max="300" v-model="smokeTempTmp" class="param-slider">
+            <span class="param-value">{{ smokeTempTmp }}°C</span>
           </div>
         </div>
         <button class="optimize-button" @click="runOptimization">
           <span class="button-icon">✨</span>
           <span>运行优化</span>
         </button>
+        <!-- 根据用户参数自动推荐方案（无需手动预置切换） -->
+      </div>
+      <!-- 优化结果与建议 -->
+      <div class="optimization-results">
+        <h2 class="section-title">优化结果与建议</h2>
+        <div class="results-content">
+          <div class="result-charts">
+            <div class="chart">
+              <div class="chart-title">能源利用效率对比</div>
+              <div class="chart-bars">
+                <div class="chart-bar old" :style="{height: optimizationResults.baseline + '%'}">
+                  <span>优化前：{{ optimizationResults.baseline }}%</span>
+                </div>
+                <div class="chart-bar new" :style="{height: optimizationResults.utilizationPercent + '%'}">
+                  <span>优化后：{{ optimizationResults.utilizationPercent }}%</span>
+                </div>
+              </div>
+            </div>
+            <div class="chart">
+              <div class="chart-title">系统负载分布（估算）</div>
+              <div class="chart-pie" :title="`发电:${powerPriority}% 制冷:${coolingPriority}% 制热:${heatingPriority}%`"></div>
+            </div>
+          </div>
+          <div class="optimization-suggestions">
+            <h3 class="suggestions-title">核心优化建议</h3>
+            <ul class="suggestions-list">
+              <li v-for="(s, i) in suggestions" :key="i">{{ s }}</li>
+            </ul>
+          </div>
+        </div>
       </div>
       <!-- 实时监测数据 -->
       <div class="monitoring-data">
@@ -187,53 +217,12 @@
           </div>
         </div>
       </div>
-      <!-- 优化结果与建议 -->
-      <div class="optimization-results">
-        <h2 class="section-title">优化结果与建议</h2>
-        <div class="results-content">
-          <div class="result-charts">
-            <div class="chart">
-              <div class="chart-title">能源利用效率对比</div>
-              <div class="chart-bars">
-                <div class="chart-bar old" style="height: 65%">
-                  <span>优化前：65%</span>
-                </div>
-                <div class="chart-bar new" style="height: 82.3%">
-                  <span>优化后：82.3%</span>
-                </div>
-              </div>
-            </div>
-            <div class="chart">
-              <div class="chart-title">系统负载分布</div>
-              <div class="chart-pie">
-                <div class="pie-section power" title="发电负载：45%"></div>
-                <div class="pie-section cooling" title="制冷负载：30%"></div>
-                <div class="pie-section heating" title="制热负载：25%"></div>
-              </div>
-            </div>
-          </div>
-          <div class="optimization-suggestions">
-            <h3 class="suggestions-title">核心优化建议</h3>
-            <ul class="suggestions-list">
-              <li>微燃机负载保持在82%（当前82%），当前运行效率良好，可最大化发电效率，同时为溴化锂机组提供充足余热</li>
-              <li>溴化锂机组蒸汽压力保持在0.69MPa（当前0.69MPa），运行稳定，可保持当前参数</li>
-              <li>水泵流量设定为90%（当前90%），匹配主机需求，避免流量过剩导致能耗浪费</li>
-              <li>烟气温度保持在288.8°C（当前288.8°C），满足系统需求，定期检查烟气管道</li>
-              <li>每周清洗Y型过滤器1次（运行初期），每月1次常规清洗，避免水系统堵塞</li>
-              <li>系统最高点自动排气阀每日检查1次，每周手动排气1次，彻底排除管道空气</li>
-              <li>空调末端风盘滤网每45天清洗1次，同步对风盘手动排气，解决室温不均问题</li>
-              <li>用电高峰时段（10:00-12:00、18:00-20:00）将发电优先级提至70%，余电优先自用</li>
-              <li>每季度核对水泵选型参数，确保扬程/流量满足主机要求，避免长期低效率运行</li>
-              <li>每年清洗板式换热器2次（夏季、冬季前），使用专用除垢剂，保证换热效率</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script>
+import schemes from '../optimizations/schemes.js'
 export default {
   name: 'OperationOptimization',
   data() {
@@ -245,6 +234,13 @@ export default {
       gasLimit: 110,
       pumpFlow: 90,
       smokeTemp: 290,
+      powerPriorityTmp: 60,
+      coolingPriorityTmp: 25,
+      heatingPriorityTmp: 15,
+      gasLimitTmp: 110,
+      pumpFlowTmp: 90,
+      smokeTempTmp: 290,
+      // presets removed — recommendation is computed from current params
       // 系统状态数据
       systemData: {
         running: {
@@ -297,6 +293,93 @@ export default {
   mounted() {
     this.updateTimer = setInterval(() => this.updateRealTimeData(), 2000);
   },
+  computed: {
+    optimizationResults() {
+      const parsePercent = (s, fallback=65) => {
+        if (!s) return fallback;
+        const n = parseFloat(String(s).replace('%',''));
+        return isNaN(n) ? fallback : n;
+      };
+
+      const baseline = parsePercent(this.efficiencyData.utilizationRate, 65);
+
+      let util = baseline;
+      util += (this.powerPriority - 50) * 0.28;
+      util += (50 - this.coolingPriority) * 0.18;
+      util += (this.pumpFlow - 85) * 0.06;
+      util = Math.max(30, Math.min(95, parseFloat(util.toFixed(1))));
+
+      const gasReductionPercent = Math.max(0, ((this.powerPriority - 50) * 0.06) + ((85 - this.pumpFlow) * 0.03));
+      const pumpSavingPercent = this.pumpFlow > 90 ? Math.max(0, (95 - this.pumpFlow) * 0.8) : Math.max(0, (90 - this.pumpFlow) * 0.4);
+
+      return {
+        baseline: baseline,
+        utilizationPercent: util,
+        gasReductionPercent: parseFloat(gasReductionPercent.toFixed(2)),
+        pumpSavingPercent: parseFloat(pumpSavingPercent.toFixed(2))
+      };
+    },
+    suggestions() {
+      // 优先返回与当前参数最匹配的方案建议（来自外部 schemes），同时追加若干针对性建议
+      const base = (this.matchedScheme && this.matchedScheme.suggestions) ? [...this.matchedScheme.suggestions] : [];
+      const diff = this.powerPriority - this.coolingPriority;
+      if (Math.abs(diff) < 10) {
+        base.unshift('参数接近均衡：推荐运行混合策略，按需联动发电/制冷/制热以提升综合效率。');
+      }
+      if (this.gasLimit < 80) {
+        base.push('注意：燃气限制较严，可能影响微燃机满载能力，建议评估供应或调整优先级。');
+      }
+      if (this.pumpFlow > 92) {
+        base.push('注意：水泵流量偏高，考虑适度降低以节约能耗。');
+      } else if (this.pumpFlow < 60) {
+        base.push('注意：水泵流量偏低，可能导致换热不足，建议适度提升。');
+      }
+      return base;
+    }
+    ,
+    matchedScheme() {
+      // 计算当前参数与各方案的距离，选最小距离方案
+      const weights = {
+        powerPriority: 1.6,
+        coolingPriority: 1.6,
+        heatingPriority: 1.0,
+        gasLimit: 1.0,
+        pumpFlow: 0.9,
+        smokeTemp: 0.9
+      };
+      const ranges = {
+        powerPriority: 100,
+        coolingPriority: 100,
+        heatingPriority: 100,
+        gasLimit: 100,
+        pumpFlow: 50,
+        smokeTemp: 240
+      };
+
+      const scoreFor = (scheme) => {
+        const p = scheme.params || {};
+        let s = 0;
+        s += weights.powerPriority * Math.pow((this.powerPriority - (p.powerPriority||0)) / ranges.powerPriority, 2);
+        s += weights.coolingPriority * Math.pow((this.coolingPriority - (p.coolingPriority||0)) / ranges.coolingPriority, 2);
+        s += weights.heatingPriority * Math.pow((this.heatingPriority - (p.heatingPriority||0)) / ranges.heatingPriority, 2);
+        s += weights.gasLimit * Math.pow((this.gasLimit - (p.gasLimit||0)) / ranges.gasLimit, 2);
+        s += weights.pumpFlow * Math.pow((this.pumpFlow - (p.pumpFlow||0)) / ranges.pumpFlow, 2);
+        s += weights.smokeTemp * Math.pow((this.smokeTemp - (p.smokeTemp||0)) / ranges.smokeTemp, 2);
+        return s;
+      };
+
+      let best = null;
+      let bestScore = Infinity;
+      for (const sch of schemes) {
+        const sc = scoreFor(sch);
+        if (sc < bestScore) {
+          bestScore = sc;
+          best = sch;
+        }
+      }
+      return best || null;
+    }
+  },
   beforeUnmount() {
     if (this.updateTimer) {
       clearInterval(this.updateTimer);
@@ -330,15 +413,17 @@ export default {
       }
     },
     runOptimization() {
-      alert('优化计算已启动，将基于以下逻辑执行：\n1. 匹配当前电价时段（峰/平/谷）调整发电优先级\n2. 根据冷/热负荷需求优化溴化锂机组蒸汽压力\n3. 按水泵流量-能耗曲线设定最优流量\n4. 同步更新热水温度与储水罐运行参数');
+      alert('优化计算已启动，正在处理中，请稍候...');
       
       setTimeout(() => {
-        this.powerPriority = 70;
-        this.coolingPriority = 20;
-        this.heatingPriority = 10;
-        this.pumpFlow = 88;
-        alert('优化计算已完成！\n效果提升：\n- 综合能源利用率从78.5%提升至82.3%\n- 燃气消耗降低4.2%（微燃机+溴化锂机组）\n- 水泵能耗降低6.5%（流量优化）\n- 烟气系统稳定性提升15%（温度+压力优化）');
-      }, 2500)
+        alert('优化计算已完成！请查看优化结果与建议部分。');
+        this.powerPriority = this.powerPriorityTmp;
+        this.coolingPriority = this.coolingPriorityTmp;
+        this.heatingPriority = this.heatingPriorityTmp;
+        this.gasLimit = this.gasLimitTmp;
+        this.pumpFlow = this.pumpFlowTmp;
+        this.smokeTemp = this.smokeTempTmp;
+      }, 1500)
     }
   }
 }
@@ -705,6 +790,12 @@ td {
   border-radius: 8px;
   padding: 20px;
   border: 1px solid rgba(66, 133, 244, 0.1);
+}
+
+.recommended-label {
+  margin-top: 6px;
+  color: #2c3e50;
+  font-weight: 700;
 }
 
 .suggestions-title {

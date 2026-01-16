@@ -24,6 +24,7 @@
               <span class="button-icon">🔍</span>
               <span>故障诊断</span>
             </button>
+            <div class="refresh-countdown">设备数据<span class="count-num">{{ countdownSeconds }}</span> 秒后刷新</div>
         </div>
       </div>
       
@@ -450,7 +451,13 @@
           ">
             <div style="margin-bottom: 20px; text-align: center;">
               <div style="font-size: 24px; color: #4285f4; margin-bottom: 8px;">🔧</div>
-              <div>3D模型加载中，请稍候...</div>
+              <div v-if="modelLoadingProgress < 85">
+                正在建立通讯连接，数据加载过程中...
+              </div>
+              <div v-else>
+                数据加载成功
+              </div>
+              <div style="font-size: 14px; color: #5f6368; margin-top: 5px;">3D模型加载中，请稍候...</div>
             </div>
             <div style="width: 300px; height: 20px; background-color: rgba(66, 133, 244, 0.1); border-radius: 10px; overflow: hidden; position: relative; border: 1px solid rgba(66, 133, 244, 0.2);">
               <div 
@@ -479,9 +486,12 @@
                 {{ Math.round(modelLoadingProgress) }}%
               </div>
             </div>
-            <div style="margin-top: 15px; font-size: 12px; color: #5f6368; text-align: center;">
+            <!-- <div v-if="modelLoadingProgress < 85" style="color: #5f6368;">
               正在加载冷热电联供系统3D模型...
             </div>
+            <div v-else style="color: #188038;">
+              数据加载成功
+            </div> -->
           </div>
           
           <!-- 顶层数据点层 -->
@@ -1076,6 +1086,14 @@ export default {
       camera: null,
       renderer: null,
       animationId: null,
+      // 数据刷新与倒计时控制
+      refreshIntervalMs: 10000,
+      nextRefreshAt: null,
+      refreshTimerId: null,
+      countdownTimerId: null,
+      dateTimerId: null,
+      countPulse: false,
+      countdownSeconds: 10,
       // 设备信息按钮数据
       deviceButtons: [
         {
@@ -1383,13 +1401,39 @@ export default {
     }
   },
   mounted() {
-    // 初始化日期时间
+    // 初始化日期时间并保存定时器，以确保页面卸载时可清理
     this.updateDateTime();
-    setInterval(() => this.updateDateTime(), 1000);
-    
-    // 添加实时数据更新定时器，每1分钟更新一次
-    setInterval(() => this.updateRealTimeData(), 2000);
-    
+    this.dateTimerId = setInterval(() => this.updateDateTime(), 1000);
+
+    // 初始化并启动数据刷新定时器（使用可配置的 refreshIntervalMs）
+    // 使用一个主定时器触发数据刷新，并维护 nextRefreshAt 以便倒计时显示与刷新精确同步
+    this.updateRealTimeData();
+    this.nextRefreshAt = Date.now() + this.refreshIntervalMs;
+    this.refreshTimerId = setInterval(() => {
+      this.updateRealTimeData();
+      this.nextRefreshAt = Date.now() + this.refreshIntervalMs;
+    }, this.refreshIntervalMs);
+
+    // 倒计时：根据 nextRefreshAt 计算剩余秒数，频率较高以保持界面平滑
+    this.countdownTimerId = setInterval(() => {
+      if (!this.nextRefreshAt) {
+        const fallback = Math.ceil(this.refreshIntervalMs / 1000);
+        if (this.countdownSeconds !== fallback) {
+          this.countdownSeconds = fallback;
+          this.countPulse = true;
+          setTimeout(() => { this.countPulse = false; }, 800);
+        }
+        return;
+      }
+      const remaining = Math.max(0, this.nextRefreshAt - Date.now());
+      const newSec = Math.ceil(remaining / 1000);
+      if (newSec !== this.countdownSeconds) {
+        this.countdownSeconds = newSec;
+        this.countPulse = true;
+        setTimeout(() => { this.countPulse = false; }, 800);
+      }
+    }, 200);
+
     // 初始化3D场景
     this.$nextTick(() => {
       this.init3DScene();
@@ -1433,6 +1477,19 @@ export default {
     window.removeEventListener('mouseup', this.handleMouseUp);
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
+    // 清理刷新与倒计时定时器
+    if (this.refreshTimerId) {
+      clearInterval(this.refreshTimerId);
+      this.refreshTimerId = null;
+    }
+    if (this.countdownTimerId) {
+      clearInterval(this.countdownTimerId);
+      this.countdownTimerId = null;
+    }
+    if (this.dateTimerId) {
+      clearInterval(this.dateTimerId);
+      this.dateTimerId = null;
+    }
   },
   methods: {
     // 跳转运行优化页面
@@ -2450,6 +2507,25 @@ body {
   color: #2c3e50;
   min-width: 150px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.refresh-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #5f6368;
+  background: rgba(66,133,244,0.04);
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(66,133,244,0.12);
+  box-shadow: 0 1px 4px rgba(50,100,200,0.03);
+}
+
+.refresh-countdown .count-num {
+  font-weight: 700;
+  color: #3367d6;
+  font-size: 16px;
 }
 
 .dashboard-button:hover {
