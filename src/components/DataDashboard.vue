@@ -545,18 +545,41 @@
       <div class="right-controls">
         <!-- 右侧按钮组 -->
         <div class="right-buttons">
-            <button class="dashboard-button secondary" :class="{ active: currentSystemState === 'running' }" @click="setSystemState('running')">
+            <!-- <button class="dashboard-button secondary" :class="{ active: currentSystemState === 'running' }" @click="setSystemState('running')">
               <span class="button-icon">▶</span>
               <span>系统启动</span>
             </button>
             <button class="dashboard-button secondary" :class="{ active: currentSystemState === 'shutdown' }" @click="setSystemState('shutdown')">
               <span class="button-icon">◼</span>
               <span>系统停机</span>
-            </button>
-            <button class="dashboard-button secondary" @click="handleFaultReset">
+            </button> -->
+            <!-- <button class="dashboard-button secondary" @click="handleFaultReset">
               <span class="button-icon">🔄</span>
               <span>故障复位</span>
-            </button>
+            </button> -->
+        </div>
+        <!-- 新增目标控制面板 -->
+        <div class="target-control-panel">
+          <div class="control-row">
+            <label class="control-label">目标总有功功率 (kW)</label>
+            <input v-model="targetPowerInput" class="control-input" placeholder="45-70" />
+          </div>
+          <div class="control-row">
+            <label class="control-label">目标冷水供水温度 (℃)</label>
+            <input v-model="targetColdTempInput" class="control-input" placeholder="8-9" />
+          </div>
+          <div class="control-actions">
+            <button class="dashboard-button primary" @click="confirmTargets">确定</button>
+            <button class="dashboard-button primary" :disabled="simRunning" @click="startSimulation">开始仿真</button>
+          </div>
+          <div class="sim-status">
+            <div v-if="simRunning">仿真中，请稍候</div>
+            <div v-else-if="simMessage">{{ simMessage }}</div>
+            <div v-if="simFinished">
+              <div class="sim-result">仿真结束，结果为：总有功功率 {{ simResult.power }} kW，冷水供水温度 {{ simResult.coldTemp }} ℃</div>
+              <div class="sim-apply-link" role="button" tabindex="0" @click="applySimulationResult" @keyup.enter="applySimulationResult">应用仿真</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1166,6 +1189,20 @@ export default {
       selectedDevice: null,
       // 看板显示状态
       dashboardVisible: false,
+      // 目标控制与仿真状态
+      targetPowerInput: '',
+      targetColdTempInput: '',
+      targetPower: null,
+      targetColdTemp: null,
+      simRunning: false,
+      simFinished: false,
+      simMessage: '',
+      simResult: { power: null, coldTemp: null },
+      convergeTimerId: null,
+      convergeActive: false,
+      dampingMode: false,
+      // 保存确认之前的原始值，以便校验失败时回退
+      originalValues: null,
 
     // 趋势图的基础配置
     trendChartConfig: {
@@ -1528,158 +1565,288 @@ export default {
       this.dataPointsVisibility[pointName] = !this.dataPointsVisibility[pointName];
     },
     
-    // 更新实时数据，每个数据项独立变化，部分数据项可能保持不变，创造更自然的曲线形态
+    // 更新实时数据（与页面左侧的刷新周期一致），每次调用执行一次随机微调或收敛一步
     updateRealTimeData() {
       // 只有在系统运行状态下才更新数据
-      if (this.currentSystemState === 'running') {
-        const runningData = this.systemData.running;
-        
-        // 基础变化幅度因子
-        const baseChangeFactor = 0.3 + Math.random() * 0.5;
-        
-        // 更新powerGrid数据 - 电网电压在399.0-403.0V之间波动，80%概率变化
-        if (Math.random() < 0.8) {
-          const gridVoltageChangeUab = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 1.2;
-          const newUab = Math.max(399.0, Math.min(403.0, parseFloat(runningData.powerGrid.Uab) + gridVoltageChangeUab));
-          runningData.powerGrid.Uab = `${newUab.toFixed(1)}v`;
+      if (this.currentSystemState !== 'running') return;
+
+      const runningData = this.systemData.running;
+      // 基础变化幅度因子
+      const baseChangeFactor = 0.3 + Math.random() * 0.5;
+
+      // 记录当前是否处于收敛活动中（用于后续决定是否跳过某些随机更新，保证每次刷新都有收敛变化）
+      const isConverging = !!this.convergeActive;
+      // 如果处于收敛活动中，则先执行一次收敛步骤（与refreshInterval同步）
+      if (isConverging) {
+        const running = runningData;
+        let power = running.generator.powerTotalValue;
+        let cold = running.lithium.coldInTempValue;
+        const pTarget = this.targetPower !== null ? this.targetPower : power;
+        const tTarget = this.targetColdTemp !== null ? this.targetColdTemp : cold;
+        const pDiff = pTarget - power;
+        const tDiff = tTarget - cold;
+        const pStep = pDiff * 0.25;
+        const tStep = tDiff * 0.25;
+
+        if (Math.abs(pDiff) < 0.05) power = pTarget; else power = power + pStep;
+        if (Math.abs(tDiff) < 0.02) cold = tTarget; else cold = cold + tStep;
+
+        running.generator.powerTotalValue = parseFloat(power.toFixed(1));
+        running.generator.powerTotal = `${running.generator.powerTotalValue.toFixed(1)}kw`;
+
+        const cur = running.generator.currentAValue || 80.0;
+        running.generator.currentAValue = parseFloat((cur + pStep * 0.6).toFixed(1));
+        running.generator.currentA = `${running.generator.currentAValue.toFixed(1)}A`;
+
+        const exhaust = parseFloat(running.generator.exhaustTemp) || 417.0;
+        const exhaustNew = Math.max(417.0, Math.min(420.0, exhaust + pStep * 0.5));
+        running.generator.exhaustTemp = `${exhaustNew.toFixed(1)}℃`;
+
+        const reactive = parseFloat(running.generator.reactiveTotal) || 16.8;
+        running.generator.reactiveTotal = `${Math.max(16.0, Math.min(18.5, reactive + pStep * 0.08)).toFixed(1)}kvar`;
+
+        running.lithium.coldInTempValue = parseFloat(cold.toFixed(2));
+        running.lithium.coldInTemp = `${running.lithium.coldInTempValue.toFixed(1)}℃`;
+        const coldOut = parseFloat(running.lithium.coldOutTemp) || 12.6;
+        const coldOutNew = Math.max(12.0, Math.min(30.0, coldOut + tStep * 0.6));
+        running.lithium.coldOutTemp = `${coldOutNew.toFixed(1)}℃`;
+
+        const smokeOut = parseFloat(running.lithium.smokeOutTemp) || 65.5;
+        running.lithium.smokeOutTemp = `${Math.max(60.0, Math.min(300.0, smokeOut + pStep * 0.3)).toFixed(1)}℃`;
+
+        const reachP = Math.abs(pTarget - running.generator.powerTotalValue) < 0.05;
+        const reachT = Math.abs(tTarget - running.lithium.coldInTempValue) < 0.02;
+        if (reachP && reachT) {
+          this.convergeActive = false;
+          this.dampingMode = true;
+          this.simMessage = '已到达目标值';
+          setTimeout(() => { this.simMessage = ''; }, 3000);
         }
-        
-        if (Math.random() < 0.8) {
-          const gridVoltageChangeUbc = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 1.2;
-          const newUbc = Math.max(399.0, Math.min(403.0, parseFloat(runningData.powerGrid.Ubc) + gridVoltageChangeUbc));
-          runningData.powerGrid.Ubc = `${newUbc.toFixed(1)}v`;
-        }
-        
-        if (Math.random() < 0.8) {
-          const gridVoltageChangeUca = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 1.2;
-          const newUca = Math.max(399.0, Math.min(403.0, parseFloat(runningData.powerGrid.Uca) + gridVoltageChangeUca));
-          runningData.powerGrid.Uca = `${newUca.toFixed(1)}v`;
-        }
-        
-        // 更新generator数据
-        // 发电机电压：在400.0-402.0V之间波动，65%概率变化，变化相对平缓
-        if (Math.random() < 0.65) {
-          const generatorVoltageChange = (Math.random() > 0.6 ? 1 : -1) * baseChangeFactor * 0.6;
-          const newGenUab = Math.max(400.0, Math.min(402.0, runningData.generator.UabValue + generatorVoltageChange));
-          runningData.generator.UabValue = parseFloat(newGenUab.toFixed(1));
-          runningData.generator.Uab = `${runningData.generator.UabValue.toFixed(1)}v`;
-        }
-        
-        // 电流：在80.0-81.5A之间波动，85%概率变化，变化较为频繁
-        if (Math.random() < 0.85) {
-          const currentChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 3;
-          const newCurrentA = Math.max(80.0, Math.min(81.5, runningData.generator.currentAValue + currentChange));
-          runningData.generator.currentAValue = parseFloat(newCurrentA.toFixed(1));
-          runningData.generator.currentA = `${runningData.generator.currentAValue.toFixed(1)}A`;
-        }
-        
-        // 总有功功率：在55.0-56.5kW之间波动，85%概率变化，与电流有一定相关性但不完全同步
-        if (Math.random() < 0.85) {
-          const powerChange = (Math.random() > 0.52 ? 1 : -1) * baseChangeFactor * 5;
-          const newPowerTotal = Math.max(55.0, Math.min(56.5, runningData.generator.powerTotalValue + powerChange));
-          runningData.generator.powerTotalValue = parseFloat(newPowerTotal.toFixed(1));
-          runningData.generator.powerTotal = `${runningData.generator.powerTotalValue.toFixed(1)}kw`;
-        }
-        
-        // 无功功率：在16.0-17.5kvar之间波动，70%概率变化，独立变化
-        if (Math.random() < 0.7) {
-          const reactiveChange = (Math.random() > 0.48 ? 1 : -1) * baseChangeFactor * 1.5;
-          const newReactiveTotal = Math.max(16.0, Math.min(17.5, parseFloat(runningData.generator.reactiveTotal) + reactiveChange));
-          runningData.generator.reactiveTotal = `${newReactiveTotal.toFixed(1)}kvar`;
-        }
-        
-        // 频率：在49.8-50.1Hz之间波动，60%概率变化，变化较小且稳定
-        if (Math.random() < 0.6) {
-          const frequencyChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 0.1;
-          const newFrequency = Math.max(49.8, Math.min(50.1, runningData.generator.frequencyValue + frequencyChange));
-          runningData.generator.frequencyValue = parseFloat(newFrequency.toFixed(1));
-          runningData.generator.frequency = `${runningData.generator.frequencyValue.toFixed(1)}Hz`;
-        }
-        
-        // 转速：在2995-3000 r/min之间波动，50%概率变化，变化缓慢且稳定
-        if (Math.random() < 0.5) {
-          const speedChange = (Math.random() > 0.6 ? 1 : -1) * Math.floor(baseChangeFactor * 5);
-          const newSpeed = Math.max(2995, Math.min(3000, parseInt(runningData.generator.speed)) + speedChange);
-          runningData.generator.speed = `${newSpeed.toFixed(1)} r/min`;
-        }
-        
-        // 排气温度：在417.0-420.0℃之间波动，75%概率变化，与功率变化有一定相关性
-        if (Math.random() < 0.75) {
-          const exhaustTempChange = (Math.random() > 0.53 ? 1 : -1) * baseChangeFactor * 3;
-          const newExhaustTemp = Math.max(417.0, Math.min(420.0, parseFloat(runningData.generator.exhaustTemp) + exhaustTempChange));
-          runningData.generator.exhaustTemp = `${newExhaustTemp.toFixed(1)}℃`;
-        }
-        
-        // 累计发电量：持续增长
-        const newTotalPower = parseFloat(runningData.generator.totalPower) + 0.5 + Math.random() * 1.5;
-        runningData.generator.totalPower = `${newTotalPower.toFixed(1)} kwh`;
-        
-        // 累计燃气量：持续增长
-        const newTotalGas = parseFloat(runningData.generator.totalGas) + 0.3 + Math.random() * 0.7;
-        runningData.generator.totalGas = `${newTotalGas.toFixed(1)} m³`;
-        
-        // 更新lithium数据
-        // 冷水进水温度：在8.0-9.0℃之间波动，70%概率变化，独立变化
-        if (Math.random() < 0.7) {
-          const coldInTempChange = (Math.random() > 0.55 ? -1 : 1) * baseChangeFactor * 0.8; // 冷水温度变化方向特殊
-          const newColdInTemp = Math.max(8.0, Math.min(9.0, runningData.lithium.coldInTempValue + coldInTempChange));
-          runningData.lithium.coldInTempValue = parseFloat(newColdInTemp.toFixed(1));
-          runningData.lithium.coldInTemp = `${runningData.lithium.coldInTempValue.toFixed(1)}℃`;
-        }
-        
-        // 冷水出水温度：在12.0-13.5℃之间波动，65%概率变化，与进水温度有一定相关性
-        if (Math.random() < 0.65) {
-          const coldOutTempChange = (Math.random() > 0.55 ? -1 : 1) * baseChangeFactor * 0.8;
-          const newColdOutTemp = Math.max(12.0, Math.min(13.5, parseFloat(runningData.lithium.coldOutTemp) + coldOutTempChange));
-          runningData.lithium.coldOutTemp = `${newColdOutTemp.toFixed(1)}℃`;
-        }
-        
-        // 烟气进口温度：在280-300℃之间波动，60%概率变化，独立变化
-        if (Math.random() < 0.6) {
-          const smokeInTempChange = (Math.random() > 0.52 ? 1 : -1) * baseChangeFactor * 3;
-          const newsmokeInTemp = Math.max(280.0, Math.min(300.0, runningData.lithium.smokeInTempValue + smokeInTempChange));
-          runningData.lithium.smokeInTempValue = parseFloat(newsmokeInTemp.toFixed(1));
-          runningData.lithium.smokeInTemp = `${runningData.lithium.smokeInTempValue.toFixed(1)}℃`;
-        }
-        
-        // 烟气出口温度：在60-70℃之间波动，55%概率变化，与进水温度相关但有延迟
-        if (Math.random() < 0.55) {
-          const smokeOutTempChange = (Math.random() > 0.52 ? 1 : -1) * baseChangeFactor * 3;
-          const newsmokeOutTemp = Math.max(60.0, Math.min(70.0, parseFloat(runningData.lithium.smokeOutTemp) + smokeOutTempChange));
-          runningData.lithium.smokeOutTemp = `${newsmokeOutTemp.toFixed(1)}℃`;
-        }
-        
-        // 冷却水进水温度：在25.0-26.5℃之间波动，65%概率变化，独立变化
-        if (Math.random() < 0.65) {
-          const coolInTempChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 0.8;
-          const newCoolInTemp = Math.max(28.5, Math.min(30.0, parseFloat(runningData.lithium.coolInTemp) + coolInTempChange));
-          runningData.lithium.coolInTemp = `${newCoolInTemp.toFixed(1)}℃`;
-        }
-        
-        // 冷却水出水温度：在28.5-30.0℃之间波动，60%概率变化，与进水温度相关
-        if (Math.random() < 0.6) {
-          const coolOutTempChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 0.8;
-          const newCoolOutTemp = Math.max(25.0, Math.min(26.5, parseFloat(runningData.lithium.coolOutTemp) + coolOutTempChange));
-          runningData.lithium.coolOutTemp = `${newCoolOutTemp.toFixed(1)}℃`;
-        }
-        
-        // 蒸发器温度：在6.0-7.0℃之间波动，70%概率变化，独立变化
-        if (Math.random() < 0.7) {
-          const evaporatorTempChange = (Math.random() > 0.55 ? -1 : 1) * baseChangeFactor * 0.5;
-          const newEvaporatorTemp = Math.max(6.0, Math.min(7.0, parseFloat(runningData.lithium.evaporatorTemp) + evaporatorTempChange));
-          runningData.lithium.evaporatorTemp = `${newEvaporatorTemp.toFixed(1)}℃`;
-        }
-        
-        // 蒸发器压力：在0.68-0.70Mpa之间波动，65%概率变化，独立变化
-        if (Math.random() < 0.65) {
-          const evaporatorPressChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 0.008;
-          const newEvaporatorPress = Math.max(0.68, Math.min(0.70, parseFloat(runningData.lithium.evaporatorPress) + evaporatorPressChange));
-          runningData.lithium.evaporatorPress = `${newEvaporatorPress.toFixed(2)}Mpa`;
-        }
-        
-        // 为了更好地观察效果，添加控制台日志
-        console.log('实时数据已更新，部分数据项保持不变以创建更自然的曲线形态');
       }
+
+      // 阻尼模式下幅度更小，非阻尼时正常幅度
+      const dampingFactor = this.dampingMode ? 0.25 : 1.0;
+
+      // 更新powerGrid数据 - 基于上一次值的小幅波动（阻尼模式会减小幅度）
+      if (Math.random() < 0.8) {
+        const gridVoltageChangeUab = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 1.2 * dampingFactor;
+        const newUab = Math.max(399.0, Math.min(403.0, parseFloat(runningData.powerGrid.Uab) + gridVoltageChangeUab));
+        runningData.powerGrid.Uab = `${newUab.toFixed(1)}v`;
+      }
+
+      if (Math.random() < 0.8) {
+        const gridVoltageChangeUbc = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 1.2 * dampingFactor;
+        const newUbc = Math.max(399.0, Math.min(403.0, parseFloat(runningData.powerGrid.Ubc) + gridVoltageChangeUbc));
+        runningData.powerGrid.Ubc = `${newUbc.toFixed(1)}v`;
+      }
+
+      if (Math.random() < 0.8) {
+        const gridVoltageChangeUca = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 1.2 * dampingFactor;
+        const newUca = Math.max(399.0, Math.min(403.0, parseFloat(runningData.powerGrid.Uca) + gridVoltageChangeUca));
+        runningData.powerGrid.Uca = `${newUca.toFixed(1)}v`;
+      }
+
+      // 发电机电压
+      if (Math.random() < 0.65) {
+        const generatorVoltageChange = (Math.random() > 0.6 ? 1 : -1) * baseChangeFactor * 0.6 * dampingFactor;
+        const newGenUab = Math.max(400.0, Math.min(402.0, runningData.generator.UabValue + generatorVoltageChange));
+        runningData.generator.UabValue = parseFloat(newGenUab.toFixed(1));
+        runningData.generator.Uab = `${runningData.generator.UabValue.toFixed(1)}v`;
+      }
+
+      // 电流（如果正在收敛，则跳过随机电流更新，避免覆盖收敛带来的变化）
+      if (!isConverging && Math.random() < 0.85) {
+        const currentChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 3 * dampingFactor;
+        const newCurrentA = Math.max(80.0, Math.min(81.5, runningData.generator.currentAValue + currentChange));
+        runningData.generator.currentAValue = parseFloat(newCurrentA.toFixed(1));
+        runningData.generator.currentA = `${runningData.generator.currentAValue.toFixed(1)}A`;
+      }
+
+      // 总有功功率（如果正在收敛，则跳过随机功率更新，收敛步骤保证每次刷新都有变化）
+      if (!isConverging && Math.random() < 0.85) {
+        const powerChange = (Math.random() > 0.52 ? 1 : -1) * baseChangeFactor * 5 * dampingFactor;
+        const newPowerTotal = Math.max(55.0, Math.min(56.5, runningData.generator.powerTotalValue + powerChange));
+        runningData.generator.powerTotalValue = parseFloat(newPowerTotal.toFixed(1));
+        runningData.generator.powerTotal = `${runningData.generator.powerTotalValue.toFixed(1)}kw`;
+      }
+
+      // 无功功率
+      if (Math.random() < 0.7) {
+        const reactiveChange = (Math.random() > 0.48 ? 1 : -1) * baseChangeFactor * 1.5 * dampingFactor;
+        const newReactiveTotal = Math.max(16.0, Math.min(17.5, parseFloat(runningData.generator.reactiveTotal) + reactiveChange));
+        runningData.generator.reactiveTotal = `${newReactiveTotal.toFixed(1)}kvar`;
+      }
+
+      // 频率
+      if (Math.random() < 0.6) {
+        const frequencyChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 0.1 * dampingFactor;
+        const newFrequency = Math.max(49.8, Math.min(50.1, runningData.generator.frequencyValue + frequencyChange));
+        runningData.generator.frequencyValue = parseFloat(newFrequency.toFixed(1));
+        runningData.generator.frequency = `${runningData.generator.frequencyValue.toFixed(1)}Hz`;
+      }
+
+      // 转速
+      if (Math.random() < 0.5) {
+        const speedChange = (Math.random() > 0.6 ? 1 : -1) * Math.floor(baseChangeFactor * 5 * dampingFactor);
+        const newSpeed = Math.max(2995, Math.min(3000, parseInt(runningData.generator.speed)) + speedChange);
+        runningData.generator.speed = `${newSpeed.toFixed(1)} r/min`;
+      }
+
+      // 排气温度
+      if (Math.random() < 0.75) {
+        const exhaustTempChange = (Math.random() > 0.53 ? 1 : -1) * baseChangeFactor * 3 * dampingFactor;
+        const newExhaustTemp = Math.max(417.0, Math.min(420.0, parseFloat(runningData.generator.exhaustTemp) + exhaustTempChange));
+        runningData.generator.exhaustTemp = `${newExhaustTemp.toFixed(1)}℃`;
+      }
+
+      // 累计发电量：持续增长（按周期累加）
+      const newTotalPower = parseFloat(runningData.generator.totalPower) + (0.5 + Math.random() * 1.5) * (dampingFactor);
+      runningData.generator.totalPower = `${newTotalPower.toFixed(1)} kwh`;
+
+      // 累计燃气量：持续增长
+      const newTotalGas = parseFloat(runningData.generator.totalGas) + (0.3 + Math.random() * 0.7) * (dampingFactor);
+      runningData.generator.totalGas = `${newTotalGas.toFixed(1)} m³`;
+
+      // 冷水进水温度（如果正在收敛，则跳过随机进水温更新，收敛步骤保证每次刷新都有变化）
+      if (!isConverging && Math.random() < 0.7) {
+        const coldInTempChange = (Math.random() > 0.55 ? -1 : 1) * baseChangeFactor * 0.8 * dampingFactor;
+        const newColdInTemp = Math.max(8.0, Math.min(9.0, runningData.lithium.coldInTempValue + coldInTempChange));
+        runningData.lithium.coldInTempValue = parseFloat(newColdInTemp.toFixed(1));
+        runningData.lithium.coldInTemp = `${runningData.lithium.coldInTempValue.toFixed(1)}℃`;
+      }
+
+      // 冷水出水温度
+      if (Math.random() < 0.65) {
+        const coldOutTempChange = (Math.random() > 0.55 ? -1 : 1) * baseChangeFactor * 0.8 * dampingFactor;
+        const newColdOutTemp = Math.max(12.0, Math.min(13.5, parseFloat(runningData.lithium.coldOutTemp) + coldOutTempChange));
+        runningData.lithium.coldOutTemp = `${newColdOutTemp.toFixed(1)}℃`;
+      }
+
+      // 烟气进口温度
+      if (Math.random() < 0.6) {
+        const smokeInTempChange = (Math.random() > 0.52 ? 1 : -1) * baseChangeFactor * 3 * dampingFactor;
+        const newsmokeInTemp = Math.max(280.0, Math.min(300.0, runningData.lithium.smokeInTempValue + smokeInTempChange));
+        runningData.lithium.smokeInTempValue = parseFloat(newsmokeInTemp.toFixed(1));
+        runningData.lithium.smokeInTemp = `${runningData.lithium.smokeInTempValue.toFixed(1)}℃`;
+      }
+
+      // 烟气出口温度
+      if (Math.random() < 0.55) {
+        const smokeOutTempChange = (Math.random() > 0.52 ? 1 : -1) * baseChangeFactor * 3 * dampingFactor;
+        const newsmokeOutTemp = Math.max(60.0, Math.min(70.0, parseFloat(runningData.lithium.smokeOutTemp) + smokeOutTempChange));
+        runningData.lithium.smokeOutTemp = `${newsmokeOutTemp.toFixed(1)}℃`;
+      }
+
+      // 冷却水进水温度
+      if (Math.random() < 0.65) {
+        const coolInTempChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 0.8 * dampingFactor;
+        const newCoolInTemp = Math.max(28.5, Math.min(30.0, parseFloat(runningData.lithium.coolInTemp) + coolInTempChange));
+        runningData.lithium.coolInTemp = `${newCoolInTemp.toFixed(1)}℃`;
+      }
+
+      // 冷却水出水温度
+      if (Math.random() < 0.6) {
+        const coolOutTempChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 0.8 * dampingFactor;
+        const newCoolOutTemp = Math.max(25.0, Math.min(26.5, parseFloat(runningData.lithium.coolOutTemp) + coolOutTempChange));
+        runningData.lithium.coolOutTemp = `${newCoolOutTemp.toFixed(1)}℃`;
+      }
+
+      // 蒸发器温度
+      if (Math.random() < 0.7) {
+        const evaporatorTempChange = (Math.random() > 0.55 ? -1 : 1) * baseChangeFactor * 0.5 * dampingFactor;
+        const newEvaporatorTemp = Math.max(6.0, Math.min(7.0, parseFloat(runningData.lithium.evaporatorTemp) + evaporatorTempChange));
+        runningData.lithium.evaporatorTemp = `${newEvaporatorTemp.toFixed(1)}℃`;
+      }
+
+      // 蒸发器压力
+      if (Math.random() < 0.65) {
+        const evaporatorPressChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 0.008 * dampingFactor;
+        const newEvaporatorPress = Math.max(0.68, Math.min(0.70, parseFloat(runningData.lithium.evaporatorPress) + evaporatorPressChange));
+        runningData.lithium.evaporatorPress = `${newEvaporatorPress.toFixed(2)}Mpa`;
+      }
+
+      console.log('实时数据已更新（基于刷新周期），部分数据项保持小幅波动以创建更自然的曲线形态');
+    },
+    // 确认用户输入的目标值并开始缓慢逼近
+    confirmTargets() {
+      const p = parseFloat(this.targetPowerInput);
+      const t = parseFloat(this.targetColdTempInput);
+      // 保存原始值用于回退
+      this.originalValues = this.originalValues || {
+        power: this.systemData.running.generator.powerTotalValue,
+        coldTemp: this.systemData.running.lithium.coldInTempValue
+      };
+
+      if (isNaN(p) || p < 45 || p > 70 || isNaN(t) || t < 8 || t > 9) {
+        // 回退输入框并提示
+        this.targetPowerInput = this.systemData.running.generator.powerTotalValue.toFixed(1);
+        this.targetColdTempInput = this.systemData.running.lithium.coldInTempValue.toFixed(1);
+        this.simMessage = '输入不在合法范围（功率45-70，温度8-9），已恢复为原值';
+        setTimeout(() => { this.simMessage = ''; }, 3000);
+        return;
+      }
+
+      this.targetPower = p;
+      this.targetColdTemp = t;
+      this.simFinished = false;
+      this.simMessage = '已设置目标值，开始缓慢调整';
+      this.startConvergeToTargets();
+    },
+
+    // 开始仿真（5s），期间按钮禁用，结束后展示结果并允许“应用仿真”
+    startSimulation() {
+      const p = parseFloat(this.targetPowerInput) || this.systemData.running.generator.powerTotalValue;
+      const t = parseFloat(this.targetColdTempInput) || this.systemData.running.lithium.coldInTempValue;
+      if (isNaN(p) || p < 45 || p > 70 || isNaN(t) || t < 8 || t > 9) {
+        this.simMessage = '输入不在合法范围，无法仿真';
+        setTimeout(() => { this.simMessage = ''; }, 2500);
+        this.targetPowerInput = this.systemData.running.generator.powerTotalValue.toFixed(1);
+        this.targetColdTempInput = this.systemData.running.lithium.coldInTempValue.toFixed(1);
+        return;
+      }
+
+      this.simRunning = true;
+      this.simMessage = '仿真中，请稍候';
+      this.simFinished = false;
+      setTimeout(() => {
+        const resP = Math.max(45, Math.min(70, +(p + (Math.random() - 0.5) * 1).toFixed(1)));
+        const resT = Math.max(8, Math.min(9, +(t + (Math.random() - 0.5) * 0.1).toFixed(2)));
+        this.simResult = { power: resP, coldTemp: resT };
+        this.simRunning = false;
+        this.simFinished = true;
+        this.simMessage = '';
+      }, 5000);
+    },
+
+    // 应用仿真结果到输入并开始逼近
+    applySimulationResult() {
+      if (!this.simFinished) return;
+      this.targetPowerInput = String(this.simResult.power);
+      this.targetColdTempInput = String(this.simResult.coldTemp);
+      this.confirmTargets();
+      this.simFinished = false;
+      this.simMessage = '仿真结果已应用';
+    },
+
+    // 启动一个定时器，使运行数据缓慢逼近目标值（并带动相关参数协同变化）
+    startConvergeToTargets() {
+      // 切换为基于刷新周期的收敛模式，实际单步收敛在 updateRealTimeData 中执行
+      if (this.convergeTimerId) {
+        clearInterval(this.convergeTimerId);
+        this.convergeTimerId = null;
+      }
+      this.convergeActive = true;
+      this.dampingMode = false;
+    },
+
+    stopConvergeToTargets() {
+      // 停止收敛并关闭阻尼
+      if (this.convergeTimerId) {
+        clearInterval(this.convergeTimerId);
+        this.convergeTimerId = null;
+      }
+      this.convergeActive = false;
+      this.dampingMode = false;
     },
     
     // 初始化3D场景和加载模型
@@ -2358,6 +2525,73 @@ body {
   margin: 0;
 }
 
+/* 右侧目标控制面板样式 */
+.target-control-panel {
+  margin-top: 20px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,252,0.9));
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(66,133,244,0.12);
+  width: 220px;
+  box-shadow: 0 8px 20px rgba(66,133,244,0.06);
+}
+.target-control-panel .control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.control-label {
+  color: #425d80;
+  font-size: 13px;
+  font-weight: 600;
+}
+.control-input {
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(66,133,244,0.15);
+  padding: 6px 10px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+.control-input::placeholder { color: rgba(66,133,244,0.25); }
+.control-input::-webkit-input-placeholder { color: rgba(66,133,244,0.25); }
+.control-input::-moz-placeholder { color: rgba(66,133,244,0.25); }
+.control-input:-ms-input-placeholder { color: rgba(66,133,244,0.25); }
+.control-input:-moz-placeholder { color: rgba(66,133,244,0.25); }
+.target-control-panel .control-actions .dashboard-button {
+  padding: 6px 10px;
+  min-width: 86px;
+  font-size: 13px;
+}
+.sim-apply-link {
+  display: inline-block;
+  color: #1e88e5;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 2px 0;
+}
+.sim-apply-link:hover {
+  color: #0b63c7;
+}
+.control-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+  justify-content: space-evenly;
+}
+.sim-status {
+  margin-top: 10px;
+  color: #334e68;
+  font-size: 13px;
+}
+.sim-result {
+  margin-bottom: 8px;
+  color: #153e75;
+  font-weight: 600;
+}
+
 /* 时间显示样式 */
 .datetime-display {
   display: flex;
@@ -2365,7 +2599,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 15px 12px;
+  padding: 15px 5px;
   background: linear-gradient(135deg, rgba(66, 133, 244, 0.15) 0%, rgba(52, 119, 235, 0.15) 100%);
   border: 1px solid rgba(66, 133, 244, 0.3);
   border-radius: 12px;
@@ -2448,6 +2682,7 @@ body {
   overflow: hidden;
   position: relative;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-right: 10px;
 }
 
 .right-controls {
@@ -2457,6 +2692,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 20px;
+  padding-right: 10px;
 }
 
 .left-buttons, .right-buttons {
@@ -2492,7 +2728,7 @@ body {
 .dashboard-button {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 10px;
   padding: 12px 20px;
   background: rgba(255, 255, 255, 0.9);
