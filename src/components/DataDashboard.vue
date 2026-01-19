@@ -569,14 +569,14 @@
             <input v-model="targetColdTempInput" class="control-input" placeholder="8-9" />
           </div>
           <div class="control-actions">
-            <button class="dashboard-button primary" @click="confirmTargets">确定</button>
-            <button class="dashboard-button primary" :disabled="simRunning" @click="startSimulation">开始仿真</button>
+            <button class="dashboard-button primary" :disabled="!canConfirm || simRunning" @click="confirmTargets">确定</button>
+            <button class="dashboard-button primary" :disabled="simRunning || !isConfirmed" @click="startSimulation">开始仿真</button>
           </div>
           <div class="sim-status">
             <div v-if="simRunning">仿真中，请稍候</div>
             <div v-else-if="simMessage">{{ simMessage }}</div>
             <div v-if="simFinished">
-              <div class="sim-result">仿真结束，结果为：总有功功率 {{ simResult.power }} kW，冷水供水温度 {{ simResult.coldTemp }} ℃</div>
+              <div class="sim-result">仿真成功！结果为：总有功功率 {{ simResult.power }} kW，冷水供水温度 {{ simResult.coldTemp }} ℃</div>
               <div class="sim-apply-link" role="button" tabindex="0" @click="applySimulationResult" @keyup.enter="applySimulationResult">应用仿真</div>
             </div>
           </div>
@@ -1199,6 +1199,9 @@ export default {
       simMessage: '',
       simResult: { power: null, coldTemp: null },
       convergeTimerId: null,
+      // 轮询后端获取仿真结果的定时器及尝试次数
+      pollTimerId: null,
+      pollAttempts: 0,
       convergeActive: false,
       dampingMode: false,
       // 保存确认之前的原始值，以便校验失败时回退
@@ -1237,6 +1240,8 @@ export default {
         }
       }
     },
+    
+    // (existing methods continue...)
       // 两套数据：严格对应「画面数据.xlsx」
       systemData: {
         // 系统停机数据
@@ -1436,6 +1441,20 @@ export default {
       // 转换公式：SVG Y坐标 = 坐标轴底部Y坐标 - (温度值/最大值) * 坐标轴高度
       return 150 - (this.systemData.running.lithium.smokeInTempValue / this.trendChartConfig.axes.hotTemp.max) * 120;
     }
+    ,
+    // 是否可以点击“确定”按钮：要求输入存在且为数字
+    canConfirm() {
+      const p = this.targetPowerInput;
+      const t = this.targetColdTempInput;
+      if (!p || !t) return false;
+      const pn = parseFloat(p);
+      const tn = parseFloat(t);
+      return !isNaN(pn) && !isNaN(tn);
+    },
+    // 是否已确认目标（按过“确定”并且 targetPower/targetColdTemp 非 null）
+    isConfirmed() {
+      return this.targetPower !== null && this.targetColdTemp !== null;
+    }
   },
   mounted() {
     // 初始化日期时间并保存定时器，以确保页面卸载时可清理
@@ -1526,6 +1545,11 @@ export default {
     if (this.dateTimerId) {
       clearInterval(this.dateTimerId);
       this.dateTimerId = null;
+    }
+    // 清理轮询定时器（如果存在）
+    if (this.pollTimerId) {
+      clearInterval(this.pollTimerId);
+      this.pollTimerId = null;
     }
   },
   methods: {
@@ -1789,12 +1813,13 @@ export default {
       this.targetPower = p;
       this.targetColdTemp = t;
       this.simFinished = false;
-      this.simMessage = '已设置目标值，开始缓慢调整';
+      this.simMessage = `已设置目标值：总有功功率 ${p.toFixed(1)} kW，冷水供水温度 ${t.toFixed(1)} ℃，开始调整`;
+      // setTimeout(() => { this.simMessage = ''; }, 2000);
       this.startConvergeToTargets();
     },
 
     // 开始仿真（5s），期间按钮禁用，结束后展示结果并允许“应用仿真”
-    startSimulation() {
+    async startSimulation() {
       const p = parseFloat(this.targetPowerInput) || this.systemData.running.generator.powerTotalValue;
       const t = parseFloat(this.targetColdTempInput) || this.systemData.running.lithium.coldInTempValue;
       if (isNaN(p) || p < 45 || p > 70 || isNaN(t) || t < 8 || t > 9) {
@@ -1805,16 +1830,98 @@ export default {
         return;
       }
 
+      // 清理已存在的轮询
+      if (this.pollTimerId) {
+        clearInterval(this.pollTimerId);
+        this.pollTimerId = null;
+      }
+      this.pollAttempts = 0;
+
       this.simRunning = true;
-      this.simMessage = '仿真中，请稍候';
+      this.simMessage = '仿真中，请稍候...';
       this.simFinished = false;
-      setTimeout(() => {
-        const resP = Math.max(45, Math.min(70, +(p + (Math.random() - 0.5) * 1).toFixed(1)));
-        const resT = Math.max(8, Math.min(9, +(t + (Math.random() - 0.5) * 0.1).toFixed(2)));
-        this.simResult = { power: resP, coldTemp: resT };
+
+      // 准备请求体，请与后端 DTO 字段对应
+      const payload = {
+        totalActivePower: parseFloat(p),
+        coldWaterReturnTemp: parseFloat(t)
+      };
+
+      let simulationId = null;
+      try {
+        // 先将目标保存到后端（保存到文件），若需要可改为 /save-to-mysql
+        const saveResp = await fetch('/api/data/save-to-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!saveResp.ok) {
+          throw new Error(`${saveResp.status}`);
+        }
+
+        // 解析后端统一响应结构 ApiResponse<T>
+        const saveJson = await saveResp.json();
+        if (!saveJson || saveJson.code !== 0 || saveJson.data == null) {
+          throw new Error(`后端返回错误: ${saveJson ? saveJson.message : '无返回内容'}`);
+        }
+        simulationId = saveJson.data;
+      } catch (err) {
+        this.simMessage = '仿真请求失败：' + (err.message || err);
         this.simRunning = false;
-        this.simFinished = true;
-        this.simMessage = '';
+        setTimeout(() => { this.simMessage = ''; }, 4000);
+        return;
+      }
+
+      // 开始每5s轮询后端读取仿真结果（使用后端返回的 simulationId）
+      const maxAttempts = 60; // 最大轮询次数（5s * 60 = 5分钟）
+      this.pollTimerId = setInterval(async () => {
+        this.pollAttempts += 1;
+        if (this.pollAttempts >= maxAttempts) {
+          // 超时停止
+          clearInterval(this.pollTimerId);
+          this.pollTimerId = null;
+          this.simRunning = false;
+          this.simFinished = false;
+          this.simResult = { power: null, coldTemp: null };
+          this.pollAttempts = 0;
+          this.simMessage = '仿真失败：超过最大重试次数';
+          // 保留错误提示一段时间
+          setTimeout(() => { this.simMessage = ''; }, 6000);
+          return;
+        }
+
+        try {
+          const r = await fetch(`/api/data/simulation-result-file/${simulationId}`);
+          if (r.ok) {
+            const wrapper = await r.json();
+            if (wrapper && wrapper.code === 0 && wrapper.data) {
+              const dto = wrapper.data;
+              const resP = parseFloat(dto.totalActivePower);
+              const resT = parseFloat(dto.coldWaterReturnTemp);
+              this.simResult = { power: resP, coldTemp: resT };
+              // 停止轮询
+              if (this.pollTimerId) {
+                clearInterval(this.pollTimerId);
+                this.pollTimerId = null;
+              }
+              // 不自动应用结果，展示成功信息并显示“应用仿真”操作
+              this.simRunning = false;
+              this.simFinished = true;
+              this.simMessage = '';
+              // 显示成功文字（模板会显示 simResult）
+            } else {
+              // 后端返回成功但 data 为空或 code 非0，视为未就绪或失败，继续轮询
+              console.debug('仿真结果尚未就绪或返回异常：', wrapper && wrapper.message);
+            }
+          } else if (r.status === 404) {
+            console.debug('后端未找到结果，继续轮询');
+          } else {
+            console.warn('读取仿真结果返回非OK状态', r.status);
+          }
+        } catch (err) {
+          console.warn('轮询过程中发生错误', err);
+        }
       }, 5000);
     },
 
@@ -1827,6 +1934,10 @@ export default {
       this.simFinished = false;
       this.simMessage = '仿真结果已应用';
     },
+
+    // 当输入改变时，若与已确认的目标不同，则清除确认状态，要求重新按“确定”
+    // 这样可以保证在用户修改输入后必须再次确认才允许仿真
+    // 使用简单的监听方法：组件中添加 watcher 下方声明（vue options 风格）
 
     // 启动一个定时器，使运行数据缓慢逼近目标值（并带动相关参数协同变化）
     startConvergeToTargets() {
@@ -1848,6 +1959,8 @@ export default {
       this.convergeActive = false;
       this.dampingMode = false;
     },
+    
+    // watchers are declared below in the `watch` option
     
     // 初始化3D场景和加载模型
     init3DScene() {
@@ -1992,6 +2105,7 @@ loader.load(
         this.renderer.render(this.scene, this.camera);
       }
     },
+    
     
     // 添加鼠标交互功能
     addMouseInteraction() {
@@ -2222,13 +2336,13 @@ loader.load(
           const screenPosition = rotatedPosition.clone();
           screenPosition.project(this.camera);
           
-          console.log(`设备 ${device.id} 3D位置:`, devicePosition);
-          console.log(`设备 ${device.id} 旋转后位置:`, rotatedPosition);
-          console.log(`设备 ${device.id} 屏幕位置:`, screenPosition);
+          // console.log(`设备 ${device.id} 3D位置:`, devicePosition);
+          // console.log(`设备 ${device.id} 旋转后位置:`, rotatedPosition);
+          // console.log(`设备 ${device.id} 屏幕位置:`, screenPosition);
           
           // 检查点是否在相机视野内
           if (screenPosition.z > 1) {
-            console.log(`设备 ${device.id} 在相机视野外`);
+            // console.log(`设备 ${device.id} 在相机视野外`);
             button.style.display = 'none';
             return;
           }
@@ -2243,7 +2357,7 @@ loader.load(
           button.style.top = `${y - 40}px`; // 按钮高度的一半
           button.style.zIndex = '100'; // 确保按钮在顶层
           
-          console.log(`设备 ${device.id} 按钮位置:`, { x: `${x - 40}px`, y: `${y - 40}px` });
+          // console.log(`设备 ${device.id} 按钮位置:`, { x: `${x - 40}px`, y: `${y - 40}px` });
         } catch (error) {
           console.error(`更新设备 ${device.id} 按钮位置时出错:`, error);
         }
@@ -2260,6 +2374,18 @@ loader.load(
     closeDeviceDashboard() {
       this.dashboardVisible = false;
       this.selectedDevice = null;
+    }
+  },
+  watch: {
+    targetPowerInput(newVal) {
+      if (this.targetPower !== null && String(this.targetPower) !== newVal) {
+        this.targetPower = null;
+      }
+    },
+    targetColdTempInput(newVal) {
+      if (this.targetColdTemp !== null && String(this.targetColdTemp) !== newVal) {
+        this.targetColdTemp = null;
+      }
     }
   }
 }
@@ -2814,6 +2940,25 @@ body {
 .dashboard-button.secondary:hover {
   background: linear-gradient(135deg, rgba(66, 133, 244, 0.2), rgba(52, 119, 235, 0.2));
   border-color: #3367d6;
+}
+
+/* 禁用状态样式：浅色且不可交互 */
+.dashboard-button:disabled,
+.dashboard-button[disabled] {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0,0,0,0.08);
+  color: rgba(44,62,80,0.5);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.9;
+}
+
+.dashboard-button.primary:disabled,
+.dashboard-button.primary[disabled] {
+  background: linear-gradient(135deg, rgba(200, 230, 200, 0.6), rgba(210, 240, 210, 0.6));
+  border-color: rgba(52,168,83,0.25);
+  color: rgba(44,62,80,0.6);
 }
 
 /* 数据列表样式 */
