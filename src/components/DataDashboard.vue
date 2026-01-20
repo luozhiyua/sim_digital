@@ -2,7 +2,7 @@
   <div class="dashboard-container">
     <!-- 主标题区域 -->
     <div class="dashboard-title">
-      <h1>冷热电联供综合能源系统数字孪生运维管控平台</h1>
+      <h1>综合能源系统数字孪生运维管控平台</h1>
     </div>
     
     <!-- 顶部区域：图片和控制按钮 -->
@@ -24,7 +24,7 @@
               <span class="button-icon">🔍</span>
               <span>故障诊断</span>
             </button>
-            <div class="refresh-countdown">设备数据<span class="count-num">{{ countdownSeconds }}</span> 秒后刷新</div>
+            <div class="refresh-countdown">设备实时数据<span class="count-num">{{ countdownSeconds }}</span> 秒后刷新</div>
         </div>
       </div>
       
@@ -103,38 +103,59 @@
                   <!-- 当前数据 -->
                   <div class="dashboard-item">
                     <div class="item-label">冷水供水温度</div>
-                    <div class="item-value">{{ systemData[currentSystemState].lithium.coldInTemp }}</div>
+                    <div class="item-value label-blue">{{ systemData[currentSystemState].lithium.coldInTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">冷水回水温度</div>
-                    <div class="item-value">{{ systemData[currentSystemState].lithium.coldOutTemp }}</div>
+                    <div class="item-value pink">{{ systemData[currentSystemState].lithium.coldOutTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">烟气进口温度</div>
-                    <div class="item-value">{{ systemData[currentSystemState].lithium.smokeInTemp }}</div>
+                    <div class="item-value label-blue">{{ systemData[currentSystemState].lithium.smokeInTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">烟气出口温度</div>
-                    <div class="item-value">{{ systemData[currentSystemState].lithium.smokeOutTemp }}</div>
+                    <div class="item-value label-blue">{{ systemData[currentSystemState].lithium.smokeOutTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">冷却水供水温度</div>
-                    <div class="item-value measured">{{ systemData[currentSystemState].lithium.coolInTemp }}</div>
+                    <div class="item-value label-blue">{{ systemData[currentSystemState].lithium.coolInTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">冷却水回水温度</div>
-                    <div class="item-value measured">{{ systemData[currentSystemState].lithium.coolOutTemp }}</div>
+                    <div class="item-value pink">{{ systemData[currentSystemState].lithium.coolOutTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">蒸发器温度</div>
-                    <div class="item-value measured">{{ systemData[currentSystemState].lithium.evaporatorTemp }}</div>
+                    <div class="item-value label-blue">{{ systemData[currentSystemState].lithium.evaporatorTemp }}</div>
                   </div>
                   <div class="dashboard-item">
                     <div class="item-label">蒸发器压力</div>
-                    <div class="item-value measured">{{ systemData[currentSystemState].lithium.evaporatorPress }}</div>
+                    <div class="item-value label-blue">{{ systemData[currentSystemState].lithium.evaporatorPress }}</div>
+                  </div>
+                  <!-- 新增流量项（红色） -->
+                  <div class="dashboard-item">
+                    <div class="item-label">工质流量</div>
+                    <div class="item-value pink">{{ systemData[currentSystemState].lithium.workingFluidFlow }}</div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">一次冷剂蒸汽流量</div>
+                    <div class="item-value pink">{{ systemData[currentSystemState].lithium.primarySteamFlow }}</div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">二次冷剂蒸汽流量</div>
+                    <div class="item-value pink">{{ systemData[currentSystemState].lithium.secondarySteamFlow }}</div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">稀溶液流量</div>
+                    <div class="item-value pink">{{ systemData[currentSystemState].lithium.diluteSolutionFlow }}</div>
+                  </div>
+                  <div class="dashboard-item">
+                    <div class="item-label">浓溶液流量</div>
+                    <div class="item-value pink">{{ systemData[currentSystemState].lithium.concentratedSolutionFlow }}</div>
                   </div>
                   <!-- 数字孪生数据 -->
-                  <div class="dashboard-item">
+                  <!-- <div class="dashboard-item">
                     <div class="item-label">效率预测</div>
                     <div class="item-value digital-twin">86.5%</div>
                   </div>
@@ -150,7 +171,7 @@
                   <div class="dashboard-item">
                     <div class="item-label">检修倒计时</div>
                     <div class="item-value predicted">78天</div>
-                  </div>
+                  </div> -->
                 </div>
                 
                 <!-- 电网系统看板 -->
@@ -558,26 +579,21 @@
               <span>故障复位</span>
             </button> -->
         </div>
-        <!-- 新增目标控制面板 -->
+        <!-- 右侧目标显示（保留原样式，但不可编辑，显示实时值） -->
         <div class="target-control-panel">
           <div class="control-row">
-            <label class="control-label">目标总有功功率 (kW)</label>
-            <input v-model="targetPowerInput" class="control-input" placeholder="45-70" />
+            <label class="control-label">净发电功率 (kW)</label>
+            <input class="control-input" :value="systemData[currentSystemState].generator.powerTotalValue !== undefined ? systemData[currentSystemState].generator.powerTotalValue.toFixed(1) : systemData[currentSystemState].generator.powerTotal" readonly disabled />
           </div>
           <div class="control-row">
-            <label class="control-label">目标冷水供水温度 (℃)</label>
-            <input v-model="targetColdTempInput" class="control-input" placeholder="8-9" />
+            <label class="control-label">冷水供水温度 (℃)</label>
+            <input class="control-input" :value="systemData[currentSystemState].lithium.coldInTempValue !== undefined ? systemData[currentSystemState].lithium.coldInTempValue.toFixed(1) : systemData[currentSystemState].lithium.coldInTemp" readonly disabled />
           </div>
-          <div class="control-actions">
-            <button class="dashboard-button primary" :disabled="!canConfirm || simRunning" @click="confirmTargets">确定</button>
-            <button class="dashboard-button primary" :disabled="simRunning || !isConfirmed" @click="startSimulation">开始仿真</button>
-          </div>
-          <div class="sim-status">
-            <div v-if="simRunning">仿真中，请稍候</div>
-            <div v-else-if="simMessage">{{ simMessage }}</div>
-            <div v-if="simFinished">
-              <div class="sim-result">仿真成功！结果为：总有功功率 {{ simResult.power }} kW，冷水供水温度 {{ simResult.coldTemp }} ℃</div>
-              <div class="sim-apply-link" role="button" tabindex="0" @click="applySimulationResult" @keyup.enter="applySimulationResult">应用仿真</div>
+          <div class="control-row" style="margin-top:10px;">
+            <div class="data-value" style="font-weight:700;">
+              <span v-if="simRunning">仿真中</span>
+              <span v-else-if="simFinished">仿真成功!</span>
+              <span v-else>等待仿真</span>
             </div>
           </div>
         </div>
@@ -734,10 +750,10 @@
               <span class="data-label">制冷/制热量</span>
               <span class="data-value">{{ systemData[currentSystemState].lithium.coolingCapacity }}/{{ systemData[currentSystemState].lithium.heatingCapacity }}</span>
             </div>
-            <div class="data-item">
+            <!-- <div class="data-item">
               <span class="data-label">冷/热水流量</span>
               <span class="data-value">{{ systemData[currentSystemState].lithium.coldWaterFlow }}/{{ systemData[currentSystemState].lithium.hotWaterFlow }}</span>
-            </div>
+            </div> -->
             <div class="data-item">
               <span class="data-label">冷/热水出口温度</span>
               <span class="data-value">{{ systemData[currentSystemState].lithium.coldWaterTemp }}/{{ systemData[currentSystemState].lithium.hotWaterTemp }}</span>
@@ -762,35 +778,56 @@
             <h3 class="list-title">实时运行数据</h3>
             <div class="data-item">
               <span class="data-label">冷水供水温度</span>
-              <span class="data-value">{{ systemData[currentSystemState].lithium.coldInTemp }}</span>
+              <span class="data-value blue">{{ systemData[currentSystemState].lithium.coldInTemp }}</span>
             </div>
             <div class="data-item">
               <span class="data-label">冷水回水温度</span>
-              <span class="data-value">{{ systemData[currentSystemState].lithium.coldOutTemp }}</span>
+              <span class="data-value pink">{{ systemData[currentSystemState].lithium.coldOutTemp }}</span>
             </div>
             <div class="data-item">
               <span class="data-label">烟气进口温度</span>
-              <span class="data-value">{{ systemData[currentSystemState].lithium.smokeInTemp }}</span>
+              <span class="data-value blue">{{ systemData[currentSystemState].lithium.smokeInTemp }}</span>
             </div>
             <div class="data-item">
               <span class="data-label">烟气出口温度</span>
-              <span class="data-value">{{ systemData[currentSystemState].lithium.smokeOutTemp }}</span>
+              <span class="data-value blue">{{ systemData[currentSystemState].lithium.smokeOutTemp }}</span>
             </div>
             <div class="data-item">
               <span class="data-label">冷却水供水温度</span>
-              <span class="data-value">{{ systemData[currentSystemState].lithium.coolInTemp }}</span>
+              <span class="data-value blue">{{ systemData[currentSystemState].lithium.coolInTemp }}</span>
             </div>
             <div class="data-item">
               <span class="data-label">冷却水回水温度</span>
-              <span class="data-value">{{ systemData[currentSystemState].lithium.coolOutTemp }}</span>
+              <span class="data-value pink">{{ systemData[currentSystemState].lithium.coolOutTemp }}</span>
             </div>
             <div class="data-item">
               <span class="data-label">蒸发器温度</span>
-              <span class="data-value">{{ systemData[currentSystemState].lithium.evaporatorTemp }}</span>
+              <span class="data-value blue">{{ systemData[currentSystemState].lithium.evaporatorTemp }}</span>
             </div>
             <div class="data-item">
               <span class="data-label">蒸发器压力</span>
-              <span class="data-value">{{ systemData[currentSystemState].lithium.evaporatorPress }}</span>
+              <span class="data-value blue">{{ systemData[currentSystemState].lithium.evaporatorPress }}</span>
+            </div>
+            <!-- 新增流量项 -->
+            <div class="data-item">
+              <span class="data-label">工质流量</span>
+              <span class="data-value pink">{{ systemData[currentSystemState].lithium.workingFluidFlow }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">一次冷剂蒸汽流量</span>
+              <span class="data-value pink">{{ systemData[currentSystemState].lithium.primarySteamFlow }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">二次冷剂蒸汽流量</span>
+              <span class="data-value pink">{{ systemData[currentSystemState].lithium.secondarySteamFlow }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">稀溶液流量</span>
+              <span class="data-value pink">{{ systemData[currentSystemState].lithium.diluteSolutionFlow }}</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">浓溶液流量</span>
+              <span class="data-value pink">{{ systemData[currentSystemState].lithium.concentratedSolutionFlow }}</span>
             </div>
             <div class="data-item">
               <span class="data-label">溴化锂启动状态</span>
@@ -1090,6 +1127,9 @@ export default {
       currentTime: '',
       // 当前系统状态：shutdown（停机）/ running（运行）
       currentSystemState: 'running',
+      coldWaterFlowRes: 0,
+      coolingWaterFlowRes: 0,
+      flueGasFlowRes: 0.36,
       // 每个数据点独立的显示状态，默认都隐藏
       dataPointsVisibility: {
         coolingWaterSupplyTemperature: true,
@@ -1100,6 +1140,7 @@ export default {
         hotWaterReturnTemperature: true,
         generatorVoltage: true
       },
+      hasInputChanged: false,
       // 模型加载进度
       modelLoadingProgress: 0,
       // 3D模型对象
@@ -1110,13 +1151,13 @@ export default {
       renderer: null,
       animationId: null,
       // 数据刷新与倒计时控制
-      refreshIntervalMs: 10000,
+      refreshIntervalMs: 60000,
       nextRefreshAt: null,
       refreshTimerId: null,
       countdownTimerId: null,
       dateTimerId: null,
       countPulse: false,
-      countdownSeconds: 10,
+      countdownSeconds: 60,
       // 设备信息按钮数据
       deviceButtons: [
         {
@@ -1183,6 +1224,27 @@ export default {
           position: { x: 0, y: 0.1, z: -4.5 },
           visible: true,
           dataSource: 'waterPump2'
+        },
+        {
+          id: 'coldWaterFlow',
+          name: '冷水流量',
+          position: { x: 1.25, y: 0.1, z: -2 },
+          visible: true,
+          dataSource: 'coldWaterFlow'
+        },
+        {
+          id: 'coolingWaterFlow',
+          name: '冷却水流量',
+          position: { x: 0.25, y: 0.1, z: -7 },
+          visible: true,
+          dataSource: 'coolingWaterFlow'
+        },
+        {
+          id: 'flueGasFlow',
+          name: '烟气流量',
+          position: { x: -6.0, y: 0.1, z: 1.5 },
+          visible: true,
+          dataSource: 'flueGasFlow'
         }
       ],
       // 当前选中的设备
@@ -1317,6 +1379,17 @@ export default {
             coolOutTemp: '17.6℃',
             evaporatorTemp: '16.6℃',
             evaporatorPress: '16.9kPa',
+            // 新增流量项（单位 kg/s）
+            workingFluidFlow: '0.040 kg/s',
+            workingFluidFlowValue: 0.04,
+            primarySteamFlow: '0.012 kg/s',
+            primarySteamFlowValue: 0.012,
+            secondarySteamFlow: '0.025 kg/s',
+            secondarySteamFlowValue: 0.025,
+            diluteSolutionFlow: '0.18 kg/s',
+            diluteSolutionFlowValue: 0.18,
+            concentratedSolutionFlow: '0.12 kg/s',
+            concentratedSolutionFlowValue: 0.12,
             startState: '启动',
             // 数字孪生数据
             efficiencyPredict: '92.5%',
@@ -1392,16 +1465,28 @@ export default {
             manufactureDate: '2024.01',
             coldInTemp: '8.5℃',
             coldInTempValue: 8.5,
-            coldOutTemp: '12.6℃',
+            coldOutTemp: '11.4℃',
             smokeInTemp: '288.8℃',
             smokeInTempValue: 288.8,
             smokeOutTemp: '65.5℃',
             smokeOutTempValue: 65.5,
             coolInTemp: '29.0℃',
-            coolOutTemp: '25.6℃',
+            // 冷却水回水温度调整到 36.5-37.5 范围
+            coolOutTemp: '37.0℃',
             evaporatorTemp: '6.5℃',
             evaporatorPress: '0.69Mpa',
             startState: '停机',
+            // 新增流量项（单位 kg/s）
+            workingFluidFlow: '0.041 kg/s',
+            workingFluidFlowValue: 0.041,
+            primarySteamFlow: '0.015 kg/s',
+            primarySteamFlowValue: 0.015,
+            secondarySteamFlow: '0.024 kg/s',
+            secondarySteamFlowValue: 0.024,
+            diluteSolutionFlow: '0.16 kg/s',
+            diluteSolutionFlowValue: 0.16,
+            concentratedSolutionFlow: '0.10 kg/s',
+            concentratedSolutionFlowValue: 0.10,
             // 数字孪生数据
             efficiencyPredict: '93.8%',
             maintenanceCountdown: '1285.5h',
@@ -1451,15 +1536,15 @@ export default {
       const tn = parseFloat(t);
       return !isNaN(pn) && !isNaN(tn);
     },
-    // 是否已确认目标（按过“确定”并且 targetPower/targetColdTemp 非 null）
-    isConfirmed() {
-      return this.targetPower !== null && this.targetColdTemp !== null;
-    }
+    // // 是否已确认目标（按过“确定”并且 targetPower/targetColdTemp 非 null）
+    // isConfirmed() {
+    //   return this.targetPower !== null && this.targetColdTemp !== null;
+    // }
   },
   mounted() {
     // 初始化日期时间并保存定时器，以确保页面卸载时可清理
     this.updateDateTime();
-    this.dateTimerId = setInterval(() => this.updateDateTime(), 1000);
+    this.dateTimerId = setInterval(() => this.updateDateTime(), 60000);
 
     // 初始化并启动数据刷新定时器（使用可配置的 refreshIntervalMs）
     // 使用一个主定时器触发数据刷新，并维护 nextRefreshAt 以便倒计时显示与刷新精确同步
@@ -1467,6 +1552,7 @@ export default {
     this.nextRefreshAt = Date.now() + this.refreshIntervalMs;
     this.refreshTimerId = setInterval(() => {
       this.updateRealTimeData();
+      this.startSimulation();
       this.nextRefreshAt = Date.now() + this.refreshIntervalMs;
     }, this.refreshIntervalMs);
 
@@ -1551,6 +1637,13 @@ export default {
       clearInterval(this.pollTimerId);
       this.pollTimerId = null;
     }
+    // 清除所有数据标签
+    const allLabels = document.querySelectorAll('.data-label');
+    allLabels.forEach(label => {
+      if (label.parentNode) {
+        label.parentNode.removeChild(label);
+      }
+    });
   },
   methods: {
     // 跳转运行优化页面
@@ -1561,7 +1654,22 @@ export default {
     handleDiagnosisClick() {
       this.$router.push('/fault-diagnosis');
     },
-
+    // 清除指定设备的数据标签
+    clearDataLabel(deviceId) {
+      // 查找当前设备的标签
+      const label = document.querySelector(`.data-label[data-device-id="${deviceId}"]`);
+      if (label) {
+        // 添加淡出效果
+        label.style.opacity = '0';
+        
+        // 延迟移除标签
+        setTimeout(() => {
+          if (label.parentNode) {
+            label.parentNode.removeChild(label);
+          }
+        }, 300);
+      }
+    },
     // 设置系统状态（停机/运行）
     setSystemState(state) {
       this.currentSystemState = state;
@@ -1578,11 +1686,10 @@ export default {
     // 更新日期时间
     updateDateTime() {
       const now = new Date();
-      const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
       // 格式化日期：YYYY-MM-DD 星期X
-      this.currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${days[now.getDay()]}`;
+      this.currentDate = `2026-02-02 星期一`;
       // 格式化时间：HH:MM:SS
-      this.currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      this.currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     },
     // 切换数据点标签的显示状态
     toggleDataLabels(pointName) {
@@ -1632,7 +1739,8 @@ export default {
         running.lithium.coldInTempValue = parseFloat(cold.toFixed(2));
         running.lithium.coldInTemp = `${running.lithium.coldInTempValue.toFixed(1)}℃`;
         const coldOut = parseFloat(running.lithium.coldOutTemp) || 12.6;
-        const coldOutNew = Math.max(12.0, Math.min(30.0, coldOut + tStep * 0.6));
+        // 冷水回水温度收敛范围限制到 11.0 - 11.8
+        const coldOutNew = Math.max(11.0, Math.min(11.8, coldOut + tStep * 0.6));
         running.lithium.coldOutTemp = `${coldOutNew.toFixed(1)}℃`;
 
         const smokeOut = parseFloat(running.lithium.smokeOutTemp) || 65.5;
@@ -1739,10 +1847,10 @@ export default {
         runningData.lithium.coldInTemp = `${runningData.lithium.coldInTempValue.toFixed(1)}℃`;
       }
 
-      // 冷水出水温度
+      // 冷水出水温度（保持在 11.0 - 11.8 ℃）
       if (Math.random() < 0.65) {
-        const coldOutTempChange = (Math.random() > 0.55 ? -1 : 1) * baseChangeFactor * 0.8 * dampingFactor;
-        const newColdOutTemp = Math.max(12.0, Math.min(13.5, parseFloat(runningData.lithium.coldOutTemp) + coldOutTempChange));
+        const coldOutTempChange = (Math.random() > 0.55 ? -1 : 1) * baseChangeFactor * 0.15 * dampingFactor;
+        const newColdOutTemp = Math.max(11.0, Math.min(11.8, parseFloat(runningData.lithium.coldOutTemp) + coldOutTempChange));
         runningData.lithium.coldOutTemp = `${newColdOutTemp.toFixed(1)}℃`;
       }
 
@@ -1768,10 +1876,10 @@ export default {
         runningData.lithium.coolInTemp = `${newCoolInTemp.toFixed(1)}℃`;
       }
 
-      // 冷却水出水温度
+      // 冷却水回水温度（保持在 36.5 - 37.5 ℃）
       if (Math.random() < 0.6) {
-        const coolOutTempChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 0.8 * dampingFactor;
-        const newCoolOutTemp = Math.max(25.0, Math.min(26.5, parseFloat(runningData.lithium.coolOutTemp) + coolOutTempChange));
+        const coolOutTempChange = (Math.random() > 0.5 ? 1 : -1) * baseChangeFactor * 0.12 * dampingFactor;
+        const newCoolOutTemp = Math.max(36.5, Math.min(37.5, parseFloat(runningData.lithium.coolOutTemp) + coolOutTempChange));
         runningData.lithium.coolOutTemp = `${newCoolOutTemp.toFixed(1)}℃`;
       }
 
@@ -1789,6 +1897,55 @@ export default {
         runningData.lithium.evaporatorPress = `${newEvaporatorPress.toFixed(2)}Mpa`;
       }
 
+      // 烟气流量（kg/s） - 保持在 0.348 - 0.47 范围内
+      if (Math.random() < 0.85) {
+        const change = (Math.random() - 0.5) * 0.02 * dampingFactor; // 小幅波动
+        const newFlue = Math.max(0.348, Math.min(0.47, this.flueGasFlowRes + change));
+        this.flueGasFlowRes = parseFloat(newFlue.toFixed(3));
+      }
+
+      // 溴化锂机组新增流量项小幅波动并保持在指定范围
+      // 工质流量 0.030 - 0.052 kg/s
+      if (Math.random() < 0.8) {
+        const step = (Math.random() - 0.5) * 0.003 * dampingFactor;
+        const cur = runningData.lithium.workingFluidFlowValue || parseFloat(runningData.lithium.workingFluidFlow) || 0.04;
+        const next = Math.max(0.03, Math.min(0.052, cur + step));
+        runningData.lithium.workingFluidFlowValue = parseFloat(next.toFixed(3));
+        runningData.lithium.workingFluidFlow = `${runningData.lithium.workingFluidFlowValue.toFixed(3)} kg/s`;
+      }
+      // 一次冷剂蒸汽流量 0.006 - 0.023 kg/s
+      if (Math.random() < 0.8) {
+        const step = (Math.random() - 0.5) * 0.002 * dampingFactor;
+        const cur = runningData.lithium.primarySteamFlowValue || parseFloat(runningData.lithium.primarySteamFlow) || 0.012;
+        const next = Math.max(0.006, Math.min(0.023, cur + step));
+        runningData.lithium.primarySteamFlowValue = parseFloat(next.toFixed(3));
+        runningData.lithium.primarySteamFlow = `${runningData.lithium.primarySteamFlowValue.toFixed(3)} kg/s`;
+      }
+      // 二次冷剂蒸汽流量 0.02 - 0.03 kg/s
+      if (Math.random() < 0.8) {
+        const step = (Math.random() - 0.5) * 0.002 * dampingFactor;
+        const cur = runningData.lithium.secondarySteamFlowValue || parseFloat(runningData.lithium.secondarySteamFlow) || 0.025;
+        const next = Math.max(0.02, Math.min(0.03, cur + step));
+        runningData.lithium.secondarySteamFlowValue = parseFloat(next.toFixed(3));
+        runningData.lithium.secondarySteamFlow = `${runningData.lithium.secondarySteamFlowValue.toFixed(3)} kg/s`;
+      }
+      // 稀溶液流量 0.1 - 0.27 kg/s
+      if (Math.random() < 0.8) {
+        const step = (Math.random() - 0.5) * 0.01 * dampingFactor;
+        const cur = runningData.lithium.diluteSolutionFlowValue || parseFloat(runningData.lithium.diluteSolutionFlow) || 0.18;
+        const next = Math.max(0.1, Math.min(0.27, cur + step));
+        runningData.lithium.diluteSolutionFlowValue = parseFloat(next.toFixed(3));
+        runningData.lithium.diluteSolutionFlow = `${runningData.lithium.diluteSolutionFlowValue.toFixed(3)} kg/s`;
+      }
+      // 浓溶液流量 0.05 - 0.22 kg/s
+      if (Math.random() < 0.8) {
+        const step = (Math.random() - 0.5) * 0.008 * dampingFactor;
+        const cur = runningData.lithium.concentratedSolutionFlowValue || parseFloat(runningData.lithium.concentratedSolutionFlow) || 0.12;
+        const next = Math.max(0.05, Math.min(0.22, cur + step));
+        runningData.lithium.concentratedSolutionFlowValue = parseFloat(next.toFixed(3));
+        runningData.lithium.concentratedSolutionFlow = `${runningData.lithium.concentratedSolutionFlowValue.toFixed(3)} kg/s`;
+      }
+
       console.log('实时数据已更新（基于刷新周期），部分数据项保持小幅波动以创建更自然的曲线形态');
     },
     // 确认用户输入的目标值并开始缓慢逼近
@@ -1801,28 +1958,31 @@ export default {
         coldTemp: this.systemData.running.lithium.coldInTempValue
       };
 
-      if (isNaN(p) || p < 45 || p > 70 || isNaN(t) || t < 8 || t > 9) {
+      if (isNaN(p) || p < 30 || p > 65 || isNaN(t) || t < 6 || t > 12) {
         // 回退输入框并提示
         this.targetPowerInput = this.systemData.running.generator.powerTotalValue.toFixed(1);
         this.targetColdTempInput = this.systemData.running.lithium.coldInTempValue.toFixed(1);
-        this.simMessage = '输入不在合法范围（功率45-70，温度8-9），已恢复为原值';
+        this.simMessage = '输入不在合法范围（功率30-65，温度6-12），已恢复为原值';
         setTimeout(() => { this.simMessage = ''; }, 3000);
+        this.hasInputChanged = false;
         return;
       }
 
       this.targetPower = p;
       this.targetColdTemp = t;
       this.simFinished = false;
-      this.simMessage = `已设置目标值：总有功功率 ${p.toFixed(1)} kW，冷水供水温度 ${t.toFixed(1)} ℃，开始调整`;
+      this.simMessage = `已设置目标值：净发电功率 ${p.toFixed(1)} kW，冷水供水温度 ${t.toFixed(1)} ℃，开始调整`;
       // setTimeout(() => { this.simMessage = ''; }, 2000);
+      this.hasInputChanged = false;
       this.startConvergeToTargets();
     },
 
     // 开始仿真（5s），期间按钮禁用，结束后展示结果并允许“应用仿真”
     async startSimulation() {
+      this.simFinished = false;
       const p = parseFloat(this.targetPowerInput) || this.systemData.running.generator.powerTotalValue;
       const t = parseFloat(this.targetColdTempInput) || this.systemData.running.lithium.coldInTempValue;
-      if (isNaN(p) || p < 45 || p > 70 || isNaN(t) || t < 8 || t > 9) {
+      if (isNaN(p) || p < 30 || p > 65 || isNaN(t) || t < 6 || t > 12) {
         this.simMessage = '输入不在合法范围，无法仿真';
         setTimeout(() => { this.simMessage = ''; }, 2500);
         this.targetPowerInput = this.systemData.running.generator.powerTotalValue.toFixed(1);
@@ -1841,88 +2001,142 @@ export default {
       this.simMessage = '仿真中，请稍候...';
       this.simFinished = false;
 
-      // 准备请求体，请与后端 DTO 字段对应
-      const payload = {
-        totalActivePower: parseFloat(p),
-        coldWaterReturnTemp: parseFloat(t)
-      };
+      // // 准备请求体，请与后端 DTO 字段对应
+      // const payload = {
+      //   totalActivePower: parseFloat(p),
+      //   coldWaterReturnTemp: parseFloat(t)
+      // };
 
-      let simulationId = null;
+      // let simulationId = null;
+      // try {
+      //   // 先将目标保存到后端（保存到文件），若需要可改为 /save-to-mysql
+      //   const saveResp = await fetch('/api/data/save-to-file', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/json' },
+      //     body: JSON.stringify(payload)
+      //   });
+
+      //   if (!saveResp.ok) {
+      //     throw new Error(`${saveResp.status}`);
+      //   }
+
+      //   // 解析后端统一响应结构 ApiResponse<T>
+      //   const saveJson = await saveResp.json();
+      //   if (!saveJson || saveJson.code !== 0 || saveJson.data == null) {
+      //     throw new Error(`后端返回错误: ${saveJson ? saveJson.message : '无返回内容'}`);
+      //   }
+      //   simulationId = saveJson.data;
+      // } catch (err) {
+      //   this.simMessage = '仿真请求失败：' + (err.message || err);
+      //   this.simRunning = false;
+      //   setTimeout(() => { this.simMessage = ''; }, 4000);
+      //   return;
+      // }
+
+      // // 开始每5s轮询后端读取仿真结果（使用后端返回的 simulationId）
+      // const maxAttempts = 60; // 最大轮询次数（5s * 60 = 5分钟）
+      // this.pollTimerId = setInterval(async () => {
+      //   this.pollAttempts += 1;
+      //   if (this.pollAttempts >= maxAttempts) {
+      //     // 超时停止
+      //     clearInterval(this.pollTimerId);
+      //     this.pollTimerId = null;
+      //     this.simRunning = false;
+      //     this.simFinished = false;
+      //     this.simResult = { power: null, coldTemp: null };
+      //     this.pollAttempts = 0;
+      //     this.simMessage = '仿真失败：超过最大重试次数';
+      //     // 保留错误提示一段时间
+      //     setTimeout(() => { this.simMessage = ''; }, 6000);
+      //     return;
+      //   }
+
+      //   try {
+      //     const r = await fetch(`/api/data/simulation-result-file/${simulationId}`);
+      //     if (r.ok) {
+      //       const wrapper = await r.json();
+      //       if (wrapper && wrapper.code === 0 && wrapper.data) {
+      //         const dto = wrapper.data;
+      //         // 实际展示的是冷水流量和冷却水流量
+      //         const resP = parseFloat(dto.totalActivePower);
+      //         const resT = parseFloat(dto.coldWaterReturnTemp);
+      //         this.simResult = { power: resP, coldTemp: resT };
+      //         this.coldWaterFlowRes = resP;
+      //         this.coolingWaterFlowRes = resT;
+      //         // 停止轮询
+      //         if (this.pollTimerId) {
+      //           clearInterval(this.pollTimerId);
+      //           this.pollTimerId = null;
+      //         }
+      //         // 不自动应用结果，展示成功信息并显示“应用仿真”操作
+      //         this.simRunning = false;
+      //         this.simFinished = true;
+      //         this.simMessage = '';
+      //         // 显示成功文字（模板会显示 simResult）
+      //       } else {
+      //         // 后端返回成功但 data 为空或 code 非0，视为未就绪或失败，继续轮询
+      //         console.debug('仿真结果尚未就绪或返回异常：', wrapper && wrapper.message);
+      //       }
+      //     } else if (r.status === 404) {
+      //       console.debug('后端未找到结果，继续轮询');
+      //     } else {
+      //       console.warn('读取仿真结果返回非OK状态', r.status);
+      //     }
+      //   } catch (err) {
+      //     console.warn('轮询过程中发生错误', err);
+      //   }
+      // }, 5000);
+
+      const payload = {
+        powerPriority: parseFloat(this.powerPriorityTmp),
+        coolingPriority: parseFloat(this.coolingPriorityTmp),
+        heatingPriority: parseFloat(this.heatingPriorityTmp),
+        gasLimit: parseFloat(this.gasLimitTmp),
+        pumpFlow: parseFloat(this.pumpFlowTmp),
+        smokeTemp: parseFloat(this.smokeTempTmp)
+      };
       try {
-        // 先将目标保存到后端（保存到文件），若需要可改为 /save-to-mysql
-        const saveResp = await fetch('/api/data/save-to-file', {
+        const simulationResp = await fetch('/api/data/simulation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
-        if (!saveResp.ok) {
-          throw new Error(`${saveResp.status}`);
+        if (!simulationResp.ok) {
+          throw new Error(`${simulationResp.status}`);
         }
-
-        // 解析后端统一响应结构 ApiResponse<T>
-        const saveJson = await saveResp.json();
-        if (!saveJson || saveJson.code !== 0 || saveJson.data == null) {
-          throw new Error(`后端返回错误: ${saveJson ? saveJson.message : '无返回内容'}`);
-        }
-        simulationId = saveJson.data;
       } catch (err) {
-        this.simMessage = '仿真请求失败：' + (err.message || err);
-        this.simRunning = false;
-        setTimeout(() => { this.simMessage = ''; }, 4000);
+        alert(`优化计算请求失败：${err.message}`);
         return;
       }
 
-      // 开始每5s轮询后端读取仿真结果（使用后端返回的 simulationId）
-      const maxAttempts = 60; // 最大轮询次数（5s * 60 = 5分钟）
-      this.pollTimerId = setInterval(async () => {
-        this.pollAttempts += 1;
-        if (this.pollAttempts >= maxAttempts) {
-          // 超时停止
-          clearInterval(this.pollTimerId);
-          this.pollTimerId = null;
-          this.simRunning = false;
-          this.simFinished = false;
-          this.simResult = { power: null, coldTemp: null };
-          this.pollAttempts = 0;
-          this.simMessage = '仿真失败：超过最大重试次数';
-          // 保留错误提示一段时间
-          setTimeout(() => { this.simMessage = ''; }, 6000);
-          return;
-        }
+      setTimeout(() => {
+        // 模拟仿真结果
+        // 生成冷水流量和冷却水流量的随机值（假设合理范围）
+        const coldWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
+        const coolingWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
 
-        try {
-          const r = await fetch(`/api/data/simulation-result-file/${simulationId}`);
-          if (r.ok) {
-            const wrapper = await r.json();
-            if (wrapper && wrapper.code === 0 && wrapper.data) {
-              const dto = wrapper.data;
-              const resP = parseFloat(dto.totalActivePower);
-              const resT = parseFloat(dto.coldWaterReturnTemp);
-              this.simResult = { power: resP, coldTemp: resT };
-              // 停止轮询
-              if (this.pollTimerId) {
-                clearInterval(this.pollTimerId);
-                this.pollTimerId = null;
-              }
-              // 不自动应用结果，展示成功信息并显示“应用仿真”操作
-              this.simRunning = false;
-              this.simFinished = true;
-              this.simMessage = '';
-              // 显示成功文字（模板会显示 simResult）
-            } else {
-              // 后端返回成功但 data 为空或 code 非0，视为未就绪或失败，继续轮询
-              console.debug('仿真结果尚未就绪或返回异常：', wrapper && wrapper.message);
-            }
-          } else if (r.status === 404) {
-            console.debug('后端未找到结果，继续轮询');
-          } else {
-            console.warn('读取仿真结果返回非OK状态', r.status);
-          }
-        } catch (err) {
-          console.warn('轮询过程中发生错误', err);
-        }
-      }, 5000);
+        // 假设基础流量值，并确保在合理范围内
+        const baseColdWaterFlow = 12.0; // 基础冷水流量
+        const baseCoolingWaterFlow = 8.0; // 基础冷却水流量
+
+        this.coldWaterFlowRes = Math.max(10.0, Math.min(15.0, parseFloat((baseColdWaterFlow + coldWaterFlowVariation).toFixed(2))));
+        this.coolingWaterFlowRes = Math.max(7.0, Math.min(11.0, parseFloat((baseCoolingWaterFlow + coolingWaterFlowVariation).toFixed(2))));
+
+        // const resP = this.coldWaterFlowRes;
+        // const resT = this.coolingWaterFlowRes;
+
+        const resP = 12.1;
+        const resT = 8.3;
+
+        this.simResult = {
+          power: resP,
+          coldTemp: resT
+        };
+        this.simRunning = false;
+        this.simFinished = true;
+        this.simMessage = '';
+      }, 23600);
     },
 
     // 应用仿真结果到输入并开始逼近
@@ -1931,8 +2145,8 @@ export default {
       this.targetPowerInput = String(this.simResult.power);
       this.targetColdTempInput = String(this.simResult.coldTemp);
       this.confirmTargets();
-      this.simFinished = false;
-      this.simMessage = '仿真结果已应用';
+      this.simMessage = `已设置目标值：净发电功率 ${parseFloat(this.targetPowerInput).toFixed(1)} kW，冷水供水温度 ${parseFloat(this.targetColdTempInput).toFixed(1)} ℃，开始调整`;
+      this.startConvergeToTargets();
     },
 
     // 当输入改变时，若与已确认的目标不同，则清除确认状态，要求重新按“确定”
@@ -2247,7 +2461,20 @@ loader.load(
         button.style.position = 'absolute';
         button.style.width = '70px';
         button.style.height = '70px';
-        button.style.backgroundColor = 'rgba(135, 206, 235, 0.8)';
+        // button.style.backgroundColor = 'rgba(135, 206, 235, 0.8)';
+        // 根据设备ID设置不同的背景颜色
+        if (device.id === 'coldWaterFlow' || device.id === 'coolingWaterFlow' || device.id === 'flueGasFlow') {
+          // 冷水流量、冷却水流量和烟气流量使用浅红色
+          button.style.backgroundColor = 'rgba(255, 192, 203, 0.8)';
+        } 
+        // else if(device.id === 'lithium') {
+        //   // 溴化锂机组
+        //   button.style.background = 'linear-gradient(90deg, rgba(135, 206, 235, 0.8) 0%, rgba(135, 206, 235, 0.8) 50%, rgba(255, 192, 203, 0.8) 50%, rgba(255, 192, 203, 0.8) 100%)';
+        // } 
+        else{
+          // 其他设备使用蓝色
+          button.style.backgroundColor = 'rgba(135, 206, 235, 0.8)';
+        }
         button.style.border = '2px solid #ffffff';
         button.style.borderRadius = '50%';
         button.style.display = 'flex';
@@ -2264,12 +2491,99 @@ loader.load(
           <div class="button-label" style="color: white; font-size: 14px; text-align: center; font-weight: bold;">${device.name}</div>
         `;
         
-        // 添加点击事件
-        button.addEventListener('click', (event) => {
-          event.stopPropagation();
-          console.log(`点击设备按钮: ${device.id}`);
-          this.showDeviceDashboard(device);
-        });
+        // // 添加点击事件
+        // button.addEventListener('click', (event) => {
+        //   event.stopPropagation();
+        //   console.log(`点击设备按钮: ${device.id}`);
+        //   this.showDeviceDashboard(device);
+        // });
+
+        // 为冷水流量和冷却水流量添加特殊处理：鼠标悬浮显示数据标签
+        if (device.id === 'coldWaterFlow' || device.id === 'coolingWaterFlow' || device.id === 'flueGasFlow') {
+          // 添加鼠标悬浮事件
+          button.addEventListener('mouseenter', (event) => {
+            event.stopPropagation();
+            this.clearDataLabel(device.id);
+            
+            // 创建数据标签
+            const label = document.createElement('div');
+            label.className = 'data-label';
+            label.dataset.deviceId = device.id;
+            label.style.position = 'absolute';
+            label.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            label.style.color = 'white';
+            label.style.padding = '8px 12px';
+            label.style.borderRadius = '4px';
+            label.style.fontSize = '14px';
+            label.style.zIndex = '1000';
+            label.style.pointerEvents = 'none';
+            label.style.transition = 'opacity 0.3s ease';
+            label.style.opacity = '0';
+            
+            // 设置标签内容
+            if (device.id === 'coldWaterFlow') {
+              label.textContent = `冷水流量: ${this.coldWaterFlowRes} kg/s`;
+            } else if (device.id === 'coolingWaterFlow') {
+              label.textContent = `冷却水流量: ${this.coolingWaterFlowRes} kg/s`;
+            } else if (device.id === 'flueGasFlow') {
+              label.textContent = `烟气流量: ${this.flueGasFlowRes.toFixed(3)} kg/s`;
+            }
+            
+            // 获取按钮位置并设置标签位置
+            const buttonRect = button.getBoundingClientRect();
+            const containerRect = this.$refs.modelContainer.getBoundingClientRect();
+            
+            // 将标签显示在按钮上方
+            label.style.left = `${buttonRect.left - containerRect.left}px`;
+            label.style.top = `${buttonRect.top - containerRect.top - 40}px`;
+            
+            // 添加到模型容器
+            this.$refs.modelContainer.appendChild(label);
+            
+            // 延迟显示标签，创建淡入效果
+            setTimeout(() => {
+              label.style.opacity = '1';
+            }, 50);
+            
+            // 保存标签引用，以便鼠标离开时移除
+            button._dataLabel = label;
+          });
+          
+          // 添加鼠标离开事件
+          button.addEventListener('mouseleave', (event) => {
+            event.stopPropagation();
+            
+            // 获取之前创建的标签
+            const label = button._dataLabel;
+            if (label) {
+              // 添加淡出效果
+              label.style.opacity = '0';
+              
+              // 延迟移除标签
+              setTimeout(() => {
+                if (label.parentNode) {
+                  label.parentNode.removeChild(label);
+                }
+                // 清除引用
+                delete button._dataLabel;
+              }, 300);
+            }
+          });
+          
+          // 移除点击事件，或者保留但不执行任何操作
+          button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            // 可以选择什么都不做，或者仍然打开看板
+            // this.showDeviceDashboard(device);
+          });
+        } else {
+          // 其他设备保持原有点击事件
+          button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            console.log(`点击设备按钮: ${device.id}`);
+            this.showDeviceDashboard(device);
+          });
+        }
         
         // 添加到按钮容器
         buttonsContainer.appendChild(button);
@@ -2585,6 +2899,32 @@ body {
 .item-value.digital-twin {
   color: #4caf50; /* 绿色 - 孪生数据 */
   font-weight: bold;
+}
+
+/* 新增蓝色标签样式，供溴化锂机组的非重点项使用 */
+.item-value.label-blue {
+  color: #4fc3f7; /* 浅蓝色 */
+  font-weight: 700;
+}
+
+/* 数据列表中的蓝色/红色样式 */
+.data-value.blue {
+  color: #4fc3f7; /* 浅蓝色 */
+  font-weight: 600;
+}
+.data-value.red {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* 浅粉色，供溴化锂回水温度/流量等重点项使用（比纯红更柔和） */
+.item-value.pink {
+  color: #ffc0cb;
+  font-weight: 700;
+}
+.data-value.pink {
+  color: #ffc0cb;
+  font-weight: 700;
 }
 
 .dashboard-footer {

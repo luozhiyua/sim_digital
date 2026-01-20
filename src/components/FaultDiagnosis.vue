@@ -6,7 +6,7 @@
         <span class="back-icon">←</span>
         <span>返回仪表盘</span>
       </button>
-      <h1 class="page-title">冷热电联供综合能源系统数字孪生运维管控平台</h1>
+      <h1 class="page-title">综合能源系统数字孪生运维管控平台</h1>
     </div>
     <!-- 主内容区域 -->
     <div class="diagnosis-content">
@@ -39,61 +39,63 @@
       <div class="equipment-overview">
         <h2 class="section-title">设备状态概览</h2>
         <div class="equipment-diagram">
-          <div class="equipment-node" :class="microTurbine.status">
-            <div class="node-icon">⚙️</div>
-            <div class="node-name">微燃机</div>
-            <div class="node-status">{{ microTurbine.statusText }}</div>
+          <div class="equipment-node" :class="pumpValvePipe.status">
+            <div class="node-icon">🔧</div>
+            <div class="node-name">泵阀及管网类设备</div>
+            <div class="node-status">{{ pumpValvePipe.statusText }}</div>
           </div>
           <div class="equipment-arrow">→</div>
-          <div class="equipment-node" :class="generator.status">
-            <div class="node-icon">⚡</div>
-            <div class="node-name">发电机</div>
-            <div class="node-status">{{ generator.statusText }}</div>
-          </div>
-          <div class="equipment-arrow">→</div>
-          <div class="equipment-node" :class="lithiumBromide.status">
+          <div class="equipment-node" :class="lithiumBromideUnit.status">
             <div class="node-icon">❄️</div>
-            <div class="node-name">溴化锂机组</div>
-            <div class="node-status">{{ lithiumBromide.statusText }}</div>
+            <div class="node-name">溴化锂制冷机组类设备</div>
+            <div class="node-status">{{ lithiumBromideUnit.statusText }}</div>
           </div>
           <div class="equipment-arrow">→</div>
-          <div class="equipment-node" :class="coolingTower.status">
-            <div class="node-icon">💧</div>
-            <div class="node-name">冷却塔</div>
-            <div class="node-status">{{ coolingTower.statusText }}</div>
-          </div>
-          <div class="equipment-arrow">→</div>
-          <div class="equipment-node" :class="waterPump.status">
-            <div class="node-icon">🔄</div>
-            <div class="node-name">水泵</div>
-            <div class="node-status">{{ waterPump.statusText }}</div>
-          </div>
-          <div class="equipment-arrow">→</div>
-          <div class="equipment-node" :class="airConditioner.status">
+          <div class="equipment-node" :class="airConditionerTerminal.status">
             <div class="node-icon">🏠</div>
-            <div class="node-name">空调末端</div>
-            <div class="node-status">{{ airConditioner.statusText }}</div>
+            <div class="node-name">空调末端类设备</div>
+            <div class="node-status">{{ airConditionerTerminal.statusText }}</div>
+          </div>
+          <div class="equipment-arrow">→</div>
+          <div class="equipment-node" :class="heatStorageExchanger.status">
+            <div class="node-icon">🔥</div>
+            <div class="node-name">储热与换热类设备</div>
+            <div class="node-status">{{ heatStorageExchanger.statusText }}</div>
+          </div>
+          <div class="equipment-arrow">→</div>
+          <div class="equipment-node" :class="hostUnit.status">
+            <div class="node-icon">🖥️</div>
+            <div class="node-name">主机类设备</div>
+            <div class="node-status">{{ hostUnit.statusText }}</div>
+          </div>
+          <div class="equipment-arrow">→</div>
+          <div class="equipment-node" :class="compressorUnit.status">
+            <div class="node-icon">⚙️</div>
+            <div class="node-name">压缩机类设备</div>
+            <div class="node-status">{{ compressorUnit.statusText }}</div>
+          </div>
+          <div class="equipment-arrow">→</div>
+          <div class="equipment-node" :class="unitSystemLevel.status">
+            <div class="node-icon">🔗</div>
+            <div class="node-name">机组系统级类设备</div>
+            <div class="node-status">{{ unitSystemLevel.statusText }}</div>
           </div>
         </div>
       </div>
       <!-- 故障列表 -->
       <div class="fault-list">
-        <h2 class="section-title">故障列表</h2>
+        <h2 class="section-title">故障示意列表</h2>
         <div class="fault-table">
           <div class="table-header">
             <div class="header-cell">设备</div>
             <div class="header-cell">故障类型</div>
             <div class="header-cell">严重程度</div>
-            <div class="header-cell">发生时间</div>
-            <div class="header-cell">处理状态</div>
             <div class="header-cell">操作</div>
           </div>
           <div v-for="fault in faultData" :key="fault.id" class="table-row">
             <div class="table-cell">{{ fault.equipment }}</div>
             <div class="table-cell">{{ fault.type }}</div>
             <div class="table-cell"><span :class="'severity ' + fault.severity">{{ fault.severityText }}</span></div>
-            <div class="table-cell">{{ fault.time }}</div>
-            <div class="table-cell"><span :class="'status ' + fault.status">{{ fault.statusText }}</span></div>
             <div class="table-cell">
               <button class="detail-button" @click="viewFaultDetail(fault)">详情</button>
             </div>
@@ -145,150 +147,119 @@ export default {
   data() {
     return {
       systemStatus: '正常',
-      activeAlarms: 8,
+      activeAlarms: 2,
       alarmTrend: '-2',
       mtbf: 2980,
       mtbfChange: 3.8,
-      lastDiagnosis: '2025-09-16 09:45',
+      lastDiagnosis: '2025-12-23 09:45',
       
-      // 设备状态
-      microTurbine: {
+      // 设备状态（7类设备，保留2个轻微故障，其余正常）
+      pumpValvePipe: {
         status: 'warning',
-        statusText: '过滤器堵塞'
+        statusText: '管道堵塞'
       },
-      generator: {
+      lithiumBromideUnit: {
         status: 'normal',
         statusText: '正常'
       },
-      lithiumBromide: {
-        status: 'warning',
-        statusText: '溶液浓度异常'
-      },
-      coolingTower: {
+      airConditionerTerminal: {
         status: 'normal',
         statusText: '正常'
       },
-      waterPump: {
-        status: 'error',
-        statusText: '扬程不足'
+      heatStorageExchanger: {
+        status: 'normal',
+        statusText: '正常'
       },
-      airConditioner: {
-        status: 'warning',
-        statusText: '滤网脏堵'
+      hostUnit: {
+        status: 'normal',
+        statusText: '正常'
+      },
+      compressorUnit: {
+        status: 'normal',
+        statusText: '正常'
+      },
+      unitSystemLevel: {
+        status: 'normal',
+        statusText: '正常'
       },
       
-      // 故障数据
+      // 故障数据（覆盖7类设备）
       faultData: [
         {
           id: 1,
-          equipment: '水泵/管道',
-          type: '效果差、能耗高（水系统问题）',
+          equipment: '泵阀及管网类设备',
+          type: '管道堵塞',
           severity: 'medium',
           severityText: '中等',
-          time: '2025-07-16 08:45',
-          status: 'processing',
-          statusText: '处理中',
           solution: {
-            reason: '水过滤器堵塞、系统管道内有空气、水泵扬程/流量不足、阀门未全开/损坏、水质差导致板换结垢',
-            measure: '1.每月清洗Y型过滤器（运行初期加强）；2.系统最高点装自动排气阀+定期手动排气；3.核对水泵选型确保满足流量扬程；4.检查阀门确保球阀全开；5.用软化水+每月投缓蚀阻垢剂，每年清洗板换'
+            reason: '管道内杂质堆积、阀门开度不足、介质粘度异常、管道老化变形',
+            measure: '1.定期清洗管道滤网和Y型过滤器；2.检查阀门开度并校准执行器；3.优化介质参数，定期检测介质粘度；4.更换老化变形管道段'
           }
         },
         {
           id: 2,
-          equipment: '溴化锂机组',
-          type: '效果差、主机频繁启停（氟系统问题）',
-          severity: 'medium',
-          severityText: '中等',
-          time: '2025-07-16 07:30',
-          status: 'processing',
-          statusText: '处理中',
+          equipment: '溴化锂制冷机组类设备',
+          type: '溴液结晶',
+          severity: 'high',
+          severityText: '严重',
           solution: {
-            reason: '冷媒泄漏/充注量不当、电子膨胀阀卡滞/故障、室外机换热器脏堵（制热时）',
-            measure: '1.用卤素检漏仪/肥皂水查漏，按要求定量补冷媒；2.检查电子膨胀阀线圈+阀体，故障则更换；3.定期清洗室外机翅片，保持通风'
+            reason: '溶液浓度过高、加热温度异常、冷媒水温度过低、机组真空度不足',
+            measure: '1.稀释溴化锂溶液至标准浓度；2.校准加热系统温度传感器；3.调整冷媒水温度至合理范围；4.检查机组密封并抽真空'
           }
         },
         {
           id: 3,
-          equipment: '空调末端',
-          type: '室温不均、个别区域不冷/不热（风系统问题）',
+          equipment: '空调末端类设备',
+          type: '风阀执行器卡滞',
           severity: 'low',
           severityText: '轻微',
-          time: '2025-07-15 16:45',
-          status: 'processing',
-          statusText: '处理中',
           solution: {
-            reason: '风盘滤网脏堵、风盘内有空气、二通/三通阀未开/故障、水力不平衡',
-            measure: '1.每1-2个月清洗风盘回风滤网；2.为每个风盘手动排气；3.检查电动阀是否得电动作；4.调试系统水力平衡，调节支路平衡阀确保流量均匀'
+            reason: '执行器机械卡涩、电机故障、控制信号异常、连杆机构变形',
+            measure: '1.拆解清洗执行器机械结构；2.检测电机绕组和供电；3.校准控制信号参数；4.校正或更换变形连杆'
           }
         },
         {
           id: 4,
-          equipment: '储水罐/板换',
-          type: '热水不热、等待时间长',
+          equipment: '储热与换热类设备',
+          type: '换热器结垢堵塞',
           severity: 'medium',
           severityText: '中等',
-          time: '2025-07-15 14:20',
-          status: 'pending',
-          statusText: '待处理',
           solution: {
-            reason: '储水罐容量不足/结垢、板换结垢/堵塞、水温设定低、主机热水模式未启动/功率不足',
-            measure: '1.按人口选储水罐，每年除垢清洗；2.清洗生活热水侧板换；3.设定水温50-55℃；4.检查主机模式，确保优先满足热水需求'
+            reason: '水质硬度高、换热介质杂质多、流速过低、温度差过大',
+            measure: '1.采用化学清洗或物理清洗去除结垢；2.加装水质软化装置；3.优化换热介质流速；4.调整换热温差至设计范围'
           }
         },
         {
           id: 5,
-          equipment: '热水回路',
-          type: '热水供应不稳定、忽冷忽热',
-          severity: 'low',
-          severityText: '轻微',
-          time: '2025-07-15 11:10',
-          status: 'pending',
-          statusText: '待处理',
+          equipment: '主机类设备',
+          type: '轴承故障',
+          severity: 'high',
+          severityText: '严重',
           solution: {
-            reason: '系统混入冷水、水泵/三通阀动作异常、储水罐内盘管破裂',
-            measure: '1.检查热水回路上止回阀是否失效；2.检查热水循环泵/三通阀运行逻辑，确保稳定切换；3.压力测试储水罐盘管，破裂则更换'
+            reason: '润滑不足、轴承磨损、安装偏差、振动过大、负载异常',
+            measure: '1.补充或更换专用润滑油；2.更换磨损轴承；3.重新校准安装精度；4.加装减震装置并优化负载分配'
           }
         },
         {
           id: 6,
-          equipment: '主机',
-          type: '噪音大、振动大',
+          equipment: '压缩机类设备',
+          type: '吸排气压力异常',
           severity: 'medium',
           severityText: '中等',
-          time: '2025-07-14 19:50',
-          status: 'resolved',
-          statusText: '已解决',
           solution: {
-            reason: '安装基础不平稳、水泵气蚀/轴承损坏、压缩机液击/磨损、水系统有空气',
-            measure: '1.确保主机安装在坚固平整基础上，加减震垫；2.检查水泵确保进口压力足够，故障则更换；3.检查冷媒量确保回气过热度正常，避免液击；4.彻底排除系统空气'
+            reason: '制冷剂泄漏、滤网堵塞、膨胀阀故障、环境温度异常',
+            measure: '1.查漏并补充制冷剂；2.清洗吸排气滤网；3.检修或更换膨胀阀；4.优化机房环境温度，加装通风散热装置'
           }
         },
         {
           id: 7,
-          equipment: '压缩机',
-          type: '频繁报高压/低压故障',
+          equipment: '机组系统级类设备',
+          type: '控制系统失效',
           severity: 'high',
           severityText: '严重',
-          time: '2025-07-14 15:30',
-          status: 'resolved',
-          statusText: '已解决',
           solution: {
-            reason: '高压：换热器脏堵、冷却水流量不足、有空气；低压：冷媒泄漏、过滤器堵塞、环境温度过低',
-            measure: '1.高压：清洗换热器、检查水泵阀门、排气；2.低压：查漏补漏、更换干燥过滤器、低温环境下调整运行参数'
-          }
-        },
-        {
-          id: 8,
-          equipment: '整机',
-          type: '完全不启动、无任何反应',
-          severity: 'high',
-          severityText: '严重',
-          time: '2025-07-14 10:05',
-          status: 'resolved',
-          statusText: '已解决',
-          solution: {
-            reason: '电源问题（跳闸/插头未插/电压异常/缺相）、控制器/线路问题（断电/设置错误/断路短路/保险丝熔断）',
-            measure: '1.自查：检查总开关/插头/空开；2.专业检查：测供电电压、查控制线路通断、检查保险丝'
+            reason: 'PLC程序故障、传感器信号丢失、通讯链路中断、电源模块故障',
+            measure: '1.恢复PLC备份程序并调试；2.检查传感器供电和接线；3.修复通讯链路故障点；4.更换故障电源模块'
           }
         }
       ]
@@ -304,8 +275,6 @@ export default {
         设备：${fault.equipment}
         故障类型：${fault.type}
         严重程度：${fault.severityText}
-        发生时间：${fault.time}
-        处理状态：${fault.statusText}
         \n【可能原因】
         ${fault.solution.reason}
         \n【优化措施】
@@ -545,7 +514,7 @@ export default {
 
 .table-header {
   display: grid;
-  grid-template-columns: 1fr 1.8fr 1fr 1.2fr 1fr 0.8fr;
+  grid-template-columns: 1fr 1.8fr 1fr 0.8fr;
   background: rgba(66, 133, 244, 0.1);
   padding: 15px;
   font-weight: bold;
@@ -555,7 +524,7 @@ export default {
 
 .table-row {
   display: grid;
-  grid-template-columns: 1fr 1.8fr 1fr 1.2fr 1fr 0.8fr;
+  grid-template-columns: 1fr 1.8fr 1fr 0.8fr;
   border-bottom: 1px solid rgba(66, 133, 244, 0.1);
   transition: background 0.3s ease;
 }

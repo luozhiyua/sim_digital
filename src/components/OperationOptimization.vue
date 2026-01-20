@@ -6,7 +6,7 @@
         <span class="back-icon">←</span>
         <span>返回仪表盘</span>
       </button>
-      <h1 class="page-title">冷热电联供综合能源系统数字孪生运维管控平台</h1>
+      <h1 class="page-title">综合能源系统数字孪生运维管控平台</h1>
     </div>
     <!-- 主内容区域 -->
     <div class="optimization-content">
@@ -412,9 +412,33 @@ export default {
         // 其他数据更新逻辑...
       }
     },
-    runOptimization() {
+    async runOptimization() {
       alert('优化计算已启动，正在处理中，请稍候...');
       
+      // 准备请求体，请与后端 DTO 字段对应
+      // const payload = {
+      //   powerPriority: parseFloat(this.powerPriorityTmp),
+      //   coolingPriority: parseFloat(this.coolingPriorityTmp),
+      //   heatingPriority: parseFloat(this.heatingPriorityTmp),
+      //   gasLimit: parseFloat(this.gasLimitTmp),
+      //   pumpFlow: parseFloat(this.pumpFlowTmp),
+      //   smokeTemp: parseFloat(this.smokeTempTmp)
+      // };
+      // try {
+      //   const optimizationResp = await fetch('/api/data/optimization', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/json' },
+      //     body: JSON.stringify(payload)
+      //   });
+
+      //   if (!optimizationResp.ok) {
+      //     throw new Error(`${optimizationResp.status}`);
+      //   }
+      // } catch (err) {
+      //   alert(`优化计算请求失败：${err.message}`);
+      //   return;
+      // }
+
       setTimeout(() => {
         alert('优化计算已完成！请查看优化结果与建议部分。');
         this.powerPriority = this.powerPriorityTmp;
@@ -423,7 +447,7 @@ export default {
         this.gasLimit = this.gasLimitTmp;
         this.pumpFlow = this.pumpFlowTmp;
         this.smokeTemp = this.smokeTempTmp;
-      }, 1500)
+      }, 8500)
     }
   }
 }
