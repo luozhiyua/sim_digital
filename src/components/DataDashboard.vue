@@ -24,7 +24,7 @@
               <span class="button-icon">🔍</span>
               <span>故障诊断</span>
             </button>
-            <div class="refresh-countdown">设备数据<span class="count-num">{{ countdownSeconds }}</span> 秒后刷新</div>
+            <div class="refresh-countdown">设备实时数据<span class="count-num">{{ countdownSeconds }}</span> 秒后刷新</div>
         </div>
       </div>
       
@@ -561,23 +561,23 @@
         <!-- 新增目标控制面板 -->
         <div class="target-control-panel">
           <div class="control-row">
-            <label class="control-label">目标总有功功率 (kW)</label>
-            <input v-model="targetPowerInput" class="control-input" placeholder="45-70" />
+            <label class="control-label">净发电功率 (kW)</label>
+            <input v-model="targetPowerInput" class="control-input" placeholder="30-65" @input="hasInputChanged = true"/>
           </div>
           <div class="control-row">
-            <label class="control-label">目标冷水供水温度 (℃)</label>
-            <input v-model="targetColdTempInput" class="control-input" placeholder="8-9" />
+            <label class="control-label">冷水供水温度 (℃)</label>
+            <input v-model="targetColdTempInput" class="control-input" placeholder="6-12" @input="hasInputChanged = true"/>
           </div>
           <div class="control-actions">
-            <button class="dashboard-button primary" :disabled="!canConfirm || simRunning" @click="confirmTargets">确定</button>
-            <button class="dashboard-button primary" :disabled="simRunning || !isConfirmed" @click="startSimulation">开始仿真</button>
+            <!-- <button class="dashboard-button primary" :disabled="!canConfirm || simRunning || !hasInputChanged" @click="confirmTargets">确定</button> -->
+            <button class="dashboard-button primary" :disabled="!canConfirm || simRunning" @click="startSimulation">开始仿真</button>
           </div>
           <div class="sim-status">
             <div v-if="simRunning">仿真中，请稍候</div>
             <div v-else-if="simMessage">{{ simMessage }}</div>
             <div v-if="simFinished">
-              <div class="sim-result">仿真成功！结果为：总有功功率 {{ simResult.power }} kW，冷水供水温度 {{ simResult.coldTemp }} ℃</div>
-              <div class="sim-apply-link" role="button" tabindex="0" @click="applySimulationResult" @keyup.enter="applySimulationResult">应用仿真</div>
+              <div class="sim-result">仿真成功！结果为：净发电功率 {{ simResult.power }} kW，冷水供水温度 {{ simResult.coldTemp }} ℃</div>
+              <div class="sim-apply-link" role="button" tabindex="0" @click="applySimulationResult">应用仿真</div>
             </div>
           </div>
         </div>
@@ -1090,6 +1090,8 @@ export default {
       currentTime: '',
       // 当前系统状态：shutdown（停机）/ running（运行）
       currentSystemState: 'running',
+      coldWaterFlowRes: 0,
+      coolingWaterFlowRes: 0,
       // 每个数据点独立的显示状态，默认都隐藏
       dataPointsVisibility: {
         coolingWaterSupplyTemperature: true,
@@ -1100,6 +1102,7 @@ export default {
         hotWaterReturnTemperature: true,
         generatorVoltage: true
       },
+      hasInputChanged: false,
       // 模型加载进度
       modelLoadingProgress: 0,
       // 3D模型对象
@@ -1181,6 +1184,20 @@ export default {
           id: 'waterPump2',
           name: '水泵2',
           position: { x: 0, y: 0.1, z: -4.5 },
+          visible: true,
+          dataSource: 'waterPump2'
+        },
+        {
+          id: 'coldWaterFlow',
+          name: '冷水流量',
+          position: { x: 1.5, y: 0.1, z: -2 },
+          visible: true,
+          dataSource: 'waterPump2'
+        },
+        {
+          id: 'coolingWaterFlow',
+          name: '冷却水流量',
+          position: { x: 0.5, y: 0.1, z: -7 },
           visible: true,
           dataSource: 'waterPump2'
         }
@@ -1451,10 +1468,10 @@ export default {
       const tn = parseFloat(t);
       return !isNaN(pn) && !isNaN(tn);
     },
-    // 是否已确认目标（按过“确定”并且 targetPower/targetColdTemp 非 null）
-    isConfirmed() {
-      return this.targetPower !== null && this.targetColdTemp !== null;
-    }
+    // // 是否已确认目标（按过“确定”并且 targetPower/targetColdTemp 非 null）
+    // isConfirmed() {
+    //   return this.targetPower !== null && this.targetColdTemp !== null;
+    // }
   },
   mounted() {
     // 初始化日期时间并保存定时器，以确保页面卸载时可清理
@@ -1551,6 +1568,13 @@ export default {
       clearInterval(this.pollTimerId);
       this.pollTimerId = null;
     }
+    // 清除所有数据标签
+    const allLabels = document.querySelectorAll('.data-label');
+    allLabels.forEach(label => {
+      if (label.parentNode) {
+        label.parentNode.removeChild(label);
+      }
+    });
   },
   methods: {
     // 跳转运行优化页面
@@ -1561,7 +1585,22 @@ export default {
     handleDiagnosisClick() {
       this.$router.push('/fault-diagnosis');
     },
-
+    // 清除指定设备的数据标签
+    clearDataLabel(deviceId) {
+      // 查找当前设备的标签
+      const label = document.querySelector(`.data-label[data-device-id="${deviceId}"]`);
+      if (label) {
+        // 添加淡出效果
+        label.style.opacity = '0';
+        
+        // 延迟移除标签
+        setTimeout(() => {
+          if (label.parentNode) {
+            label.parentNode.removeChild(label);
+          }
+        }, 300);
+      }
+    },
     // 设置系统状态（停机/运行）
     setSystemState(state) {
       this.currentSystemState = state;
@@ -1801,28 +1840,31 @@ export default {
         coldTemp: this.systemData.running.lithium.coldInTempValue
       };
 
-      if (isNaN(p) || p < 45 || p > 70 || isNaN(t) || t < 8 || t > 9) {
+      if (isNaN(p) || p < 30 || p > 65 || isNaN(t) || t < 6 || t > 12) {
         // 回退输入框并提示
         this.targetPowerInput = this.systemData.running.generator.powerTotalValue.toFixed(1);
         this.targetColdTempInput = this.systemData.running.lithium.coldInTempValue.toFixed(1);
-        this.simMessage = '输入不在合法范围（功率45-70，温度8-9），已恢复为原值';
+        this.simMessage = '输入不在合法范围（功率30-65，温度6-12），已恢复为原值';
         setTimeout(() => { this.simMessage = ''; }, 3000);
+        this.hasInputChanged = false;
         return;
       }
 
       this.targetPower = p;
       this.targetColdTemp = t;
       this.simFinished = false;
-      this.simMessage = `已设置目标值：总有功功率 ${p.toFixed(1)} kW，冷水供水温度 ${t.toFixed(1)} ℃，开始调整`;
+      this.simMessage = `已设置目标值：净发电功率 ${p.toFixed(1)} kW，冷水供水温度 ${t.toFixed(1)} ℃，开始调整`;
       // setTimeout(() => { this.simMessage = ''; }, 2000);
+      this.hasInputChanged = false;
       this.startConvergeToTargets();
     },
 
     // 开始仿真（5s），期间按钮禁用，结束后展示结果并允许“应用仿真”
     async startSimulation() {
+      this.simFinished = false;
       const p = parseFloat(this.targetPowerInput) || this.systemData.running.generator.powerTotalValue;
       const t = parseFloat(this.targetColdTempInput) || this.systemData.running.lithium.coldInTempValue;
-      if (isNaN(p) || p < 45 || p > 70 || isNaN(t) || t < 8 || t > 9) {
+      if (isNaN(p) || p < 30 || p > 65 || isNaN(t) || t < 6 || t > 12) {
         this.simMessage = '输入不在合法范围，无法仿真';
         setTimeout(() => { this.simMessage = ''; }, 2500);
         this.targetPowerInput = this.systemData.running.generator.powerTotalValue.toFixed(1);
@@ -1841,87 +1883,115 @@ export default {
       this.simMessage = '仿真中，请稍候...';
       this.simFinished = false;
 
-      // 准备请求体，请与后端 DTO 字段对应
-      const payload = {
-        totalActivePower: parseFloat(p),
-        coldWaterReturnTemp: parseFloat(t)
-      };
+      // // 准备请求体，请与后端 DTO 字段对应
+      // const payload = {
+      //   totalActivePower: parseFloat(p),
+      //   coldWaterReturnTemp: parseFloat(t)
+      // };
 
-      let simulationId = null;
-      try {
-        // 先将目标保存到后端（保存到文件），若需要可改为 /save-to-mysql
-        const saveResp = await fetch('/api/data/save-to-file', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+      // let simulationId = null;
+      // try {
+      //   // 先将目标保存到后端（保存到文件），若需要可改为 /save-to-mysql
+      //   const saveResp = await fetch('/api/data/save-to-file', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/json' },
+      //     body: JSON.stringify(payload)
+      //   });
 
-        if (!saveResp.ok) {
-          throw new Error(`${saveResp.status}`);
-        }
+      //   if (!saveResp.ok) {
+      //     throw new Error(`${saveResp.status}`);
+      //   }
 
-        // 解析后端统一响应结构 ApiResponse<T>
-        const saveJson = await saveResp.json();
-        if (!saveJson || saveJson.code !== 0 || saveJson.data == null) {
-          throw new Error(`后端返回错误: ${saveJson ? saveJson.message : '无返回内容'}`);
-        }
-        simulationId = saveJson.data;
-      } catch (err) {
-        this.simMessage = '仿真请求失败：' + (err.message || err);
+      //   // 解析后端统一响应结构 ApiResponse<T>
+      //   const saveJson = await saveResp.json();
+      //   if (!saveJson || saveJson.code !== 0 || saveJson.data == null) {
+      //     throw new Error(`后端返回错误: ${saveJson ? saveJson.message : '无返回内容'}`);
+      //   }
+      //   simulationId = saveJson.data;
+      // } catch (err) {
+      //   this.simMessage = '仿真请求失败：' + (err.message || err);
+      //   this.simRunning = false;
+      //   setTimeout(() => { this.simMessage = ''; }, 4000);
+      //   return;
+      // }
+
+      // // 开始每5s轮询后端读取仿真结果（使用后端返回的 simulationId）
+      // const maxAttempts = 60; // 最大轮询次数（5s * 60 = 5分钟）
+      // this.pollTimerId = setInterval(async () => {
+      //   this.pollAttempts += 1;
+      //   if (this.pollAttempts >= maxAttempts) {
+      //     // 超时停止
+      //     clearInterval(this.pollTimerId);
+      //     this.pollTimerId = null;
+      //     this.simRunning = false;
+      //     this.simFinished = false;
+      //     this.simResult = { power: null, coldTemp: null };
+      //     this.pollAttempts = 0;
+      //     this.simMessage = '仿真失败：超过最大重试次数';
+      //     // 保留错误提示一段时间
+      //     setTimeout(() => { this.simMessage = ''; }, 6000);
+      //     return;
+      //   }
+
+      //   try {
+      //     const r = await fetch(`/api/data/simulation-result-file/${simulationId}`);
+      //     if (r.ok) {
+      //       const wrapper = await r.json();
+      //       if (wrapper && wrapper.code === 0 && wrapper.data) {
+      //         const dto = wrapper.data;
+      //         const resP = parseFloat(dto.totalActivePower);
+      //         const resT = parseFloat(dto.coldWaterReturnTemp);
+      //         this.simResult = { power: resP, coldTemp: resT };
+      //         // 停止轮询
+      //         if (this.pollTimerId) {
+      //           clearInterval(this.pollTimerId);
+      //           this.pollTimerId = null;
+      //         }
+      //         // 不自动应用结果，展示成功信息并显示“应用仿真”操作
+      //         this.simRunning = false;
+      //         this.simFinished = true;
+      //         this.simMessage = '';
+      //         // 显示成功文字（模板会显示 simResult）
+      //       } else {
+      //         // 后端返回成功但 data 为空或 code 非0，视为未就绪或失败，继续轮询
+      //         console.debug('仿真结果尚未就绪或返回异常：', wrapper && wrapper.message);
+      //       }
+      //     } else if (r.status === 404) {
+      //       console.debug('后端未找到结果，继续轮询');
+      //     } else {
+      //       console.warn('读取仿真结果返回非OK状态', r.status);
+      //     }
+      //   } catch (err) {
+      //     console.warn('轮询过程中发生错误', err);
+      //   }
+      // }, 5000);
+
+      setTimeout(() => {
+        // 模拟仿真结果：基于目标值的随机波动，功率±5，温度±0.4，确保在合法范围
+        const powerVariation = (Math.random() - 0.5) * 10; // ±5
+        const tempVariation = (Math.random() - 0.5) * 0.8; // ±0.4
+
+        const resP = Math.max(30, Math.min(65, parseFloat((p + powerVariation).toFixed(1))));
+        const resT = Math.max(6, Math.min(12, parseFloat((t + tempVariation).toFixed(2))));
+
+        // 生成冷水流量和冷却水流量的随机值（假设合理范围）
+        const coldWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
+        const coolingWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
+
+        // 假设基础流量值，并确保在合理范围内
+        const baseColdWaterFlow = 5.0; // 基础冷水流量
+        const baseCoolingWaterFlow = 10.0; // 基础冷却水流量
+
+        this.coldWaterFlowRes = Math.max(3.0, Math.min(7.0, parseFloat((baseColdWaterFlow + coldWaterFlowVariation).toFixed(2))));
+        this.coolingWaterFlowRes = Math.max(8.0, Math.min(12.0, parseFloat((baseCoolingWaterFlow + coolingWaterFlowVariation).toFixed(2))));
+
+        this.simResult = {
+          power: resP,
+          coldTemp: resT
+        };
         this.simRunning = false;
-        setTimeout(() => { this.simMessage = ''; }, 4000);
-        return;
-      }
-
-      // 开始每5s轮询后端读取仿真结果（使用后端返回的 simulationId）
-      const maxAttempts = 60; // 最大轮询次数（5s * 60 = 5分钟）
-      this.pollTimerId = setInterval(async () => {
-        this.pollAttempts += 1;
-        if (this.pollAttempts >= maxAttempts) {
-          // 超时停止
-          clearInterval(this.pollTimerId);
-          this.pollTimerId = null;
-          this.simRunning = false;
-          this.simFinished = false;
-          this.simResult = { power: null, coldTemp: null };
-          this.pollAttempts = 0;
-          this.simMessage = '仿真失败：超过最大重试次数';
-          // 保留错误提示一段时间
-          setTimeout(() => { this.simMessage = ''; }, 6000);
-          return;
-        }
-
-        try {
-          const r = await fetch(`/api/data/simulation-result-file/${simulationId}`);
-          if (r.ok) {
-            const wrapper = await r.json();
-            if (wrapper && wrapper.code === 0 && wrapper.data) {
-              const dto = wrapper.data;
-              const resP = parseFloat(dto.totalActivePower);
-              const resT = parseFloat(dto.coldWaterReturnTemp);
-              this.simResult = { power: resP, coldTemp: resT };
-              // 停止轮询
-              if (this.pollTimerId) {
-                clearInterval(this.pollTimerId);
-                this.pollTimerId = null;
-              }
-              // 不自动应用结果，展示成功信息并显示“应用仿真”操作
-              this.simRunning = false;
-              this.simFinished = true;
-              this.simMessage = '';
-              // 显示成功文字（模板会显示 simResult）
-            } else {
-              // 后端返回成功但 data 为空或 code 非0，视为未就绪或失败，继续轮询
-              console.debug('仿真结果尚未就绪或返回异常：', wrapper && wrapper.message);
-            }
-          } else if (r.status === 404) {
-            console.debug('后端未找到结果，继续轮询');
-          } else {
-            console.warn('读取仿真结果返回非OK状态', r.status);
-          }
-        } catch (err) {
-          console.warn('轮询过程中发生错误', err);
-        }
+        this.simFinished = true;
+        this.simMessage = '';
       }, 5000);
     },
 
@@ -1931,8 +2001,8 @@ export default {
       this.targetPowerInput = String(this.simResult.power);
       this.targetColdTempInput = String(this.simResult.coldTemp);
       this.confirmTargets();
-      this.simFinished = false;
-      this.simMessage = '仿真结果已应用';
+      this.simMessage = `已设置目标值：净发电功率 ${parseFloat(this.targetPowerInput).toFixed(1)} kW，冷水供水温度 ${parseFloat(this.targetColdTempInput).toFixed(1)} ℃，开始调整`;
+      this.startConvergeToTargets();
     },
 
     // 当输入改变时，若与已确认的目标不同，则清除确认状态，要求重新按“确定”
@@ -2247,7 +2317,15 @@ loader.load(
         button.style.position = 'absolute';
         button.style.width = '70px';
         button.style.height = '70px';
-        button.style.backgroundColor = 'rgba(135, 206, 235, 0.8)';
+        // button.style.backgroundColor = 'rgba(135, 206, 235, 0.8)';
+        // 根据设备ID设置不同的背景颜色
+        if (device.id === 'coldWaterFlow' || device.id === 'coolingWaterFlow') {
+          // 冷水流量和冷却水流量使用浅红色
+          button.style.backgroundColor = 'rgba(255, 192, 203, 0.8)';
+        } else {
+          // 其他设备使用蓝色
+          button.style.backgroundColor = 'rgba(135, 206, 235, 0.8)';
+        }
         button.style.border = '2px solid #ffffff';
         button.style.borderRadius = '50%';
         button.style.display = 'flex';
@@ -2264,12 +2342,97 @@ loader.load(
           <div class="button-label" style="color: white; font-size: 14px; text-align: center; font-weight: bold;">${device.name}</div>
         `;
         
-        // 添加点击事件
-        button.addEventListener('click', (event) => {
-          event.stopPropagation();
-          console.log(`点击设备按钮: ${device.id}`);
-          this.showDeviceDashboard(device);
-        });
+        // // 添加点击事件
+        // button.addEventListener('click', (event) => {
+        //   event.stopPropagation();
+        //   console.log(`点击设备按钮: ${device.id}`);
+        //   this.showDeviceDashboard(device);
+        // });
+
+        // 为冷水流量和冷却水流量添加特殊处理：鼠标悬浮显示数据标签
+        if (device.id === 'coldWaterFlow' || device.id === 'coolingWaterFlow') {
+          // 添加鼠标悬浮事件
+          button.addEventListener('mouseenter', (event) => {
+            event.stopPropagation();
+            this.clearDataLabel(device.id);
+            
+            // 创建数据标签
+            const label = document.createElement('div');
+            label.className = 'data-label';
+            label.dataset.deviceId = device.id;
+            label.style.position = 'absolute';
+            label.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            label.style.color = 'white';
+            label.style.padding = '8px 12px';
+            label.style.borderRadius = '4px';
+            label.style.fontSize = '14px';
+            label.style.zIndex = '1000';
+            label.style.pointerEvents = 'none';
+            label.style.transition = 'opacity 0.3s ease';
+            label.style.opacity = '0';
+            
+            // 设置标签内容
+            if (device.id === 'coldWaterFlow') {
+              label.textContent = `冷水流量: ${this.coldWaterFlowRes} m³/h`;
+            } else if (device.id === 'coolingWaterFlow') {
+              label.textContent = `冷却水流量: ${this.coolingWaterFlowRes} m³/h`;
+            }
+            
+            // 获取按钮位置并设置标签位置
+            const buttonRect = button.getBoundingClientRect();
+            const containerRect = this.$refs.modelContainer.getBoundingClientRect();
+            
+            // 将标签显示在按钮上方
+            label.style.left = `${buttonRect.left - containerRect.left}px`;
+            label.style.top = `${buttonRect.top - containerRect.top - 40}px`;
+            
+            // 添加到模型容器
+            this.$refs.modelContainer.appendChild(label);
+            
+            // 延迟显示标签，创建淡入效果
+            setTimeout(() => {
+              label.style.opacity = '1';
+            }, 50);
+            
+            // 保存标签引用，以便鼠标离开时移除
+            button._dataLabel = label;
+          });
+          
+          // 添加鼠标离开事件
+          button.addEventListener('mouseleave', (event) => {
+            event.stopPropagation();
+            
+            // 获取之前创建的标签
+            const label = button._dataLabel;
+            if (label) {
+              // 添加淡出效果
+              label.style.opacity = '0';
+              
+              // 延迟移除标签
+              setTimeout(() => {
+                if (label.parentNode) {
+                  label.parentNode.removeChild(label);
+                }
+                // 清除引用
+                delete button._dataLabel;
+              }, 300);
+            }
+          });
+          
+          // 移除点击事件，或者保留但不执行任何操作
+          button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            // 可以选择什么都不做，或者仍然打开看板
+            // this.showDeviceDashboard(device);
+          });
+        } else {
+          // 其他设备保持原有点击事件
+          button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            console.log(`点击设备按钮: ${device.id}`);
+            this.showDeviceDashboard(device);
+          });
+        }
         
         // 添加到按钮容器
         buttonsContainer.appendChild(button);
