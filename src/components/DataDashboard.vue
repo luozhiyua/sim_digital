@@ -1883,116 +1883,126 @@ export default {
       this.simMessage = '仿真中，请稍候...';
       this.simFinished = false;
 
-      // // 准备请求体，请与后端 DTO 字段对应
-      // const payload = {
-      //   totalActivePower: parseFloat(p),
-      //   coldWaterReturnTemp: parseFloat(t)
-      // };
+      // 准备请求体，请与后端 DTO 字段对应
+      const payload = {
+        totalActivePower: parseFloat(p),
+        coldWaterReturnTemp: parseFloat(t)
+      };
 
-      // let simulationId = null;
-      // try {
-      //   // 先将目标保存到后端（保存到文件），若需要可改为 /save-to-mysql
-      //   const saveResp = await fetch('/api/data/save-to-file', {
-      //     method: 'POST',
-      //     headers: { 'Content-Type': 'application/json' },
-      //     body: JSON.stringify(payload)
-      //   });
+      let simulationId = null;
+      try {
+        // 先将目标保存到后端（保存到文件），若需要可改为 /save-to-mysql
+        const saveResp = await fetch('/api/data/save-to-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-      //   if (!saveResp.ok) {
-      //     throw new Error(`${saveResp.status}`);
-      //   }
+        if (!saveResp.ok) {
+          throw new Error(`${saveResp.status}`);
+        }
 
-      //   // 解析后端统一响应结构 ApiResponse<T>
-      //   const saveJson = await saveResp.json();
-      //   if (!saveJson || saveJson.code !== 0 || saveJson.data == null) {
-      //     throw new Error(`后端返回错误: ${saveJson ? saveJson.message : '无返回内容'}`);
-      //   }
-      //   simulationId = saveJson.data;
-      // } catch (err) {
-      //   this.simMessage = '仿真请求失败：' + (err.message || err);
-      //   this.simRunning = false;
-      //   setTimeout(() => { this.simMessage = ''; }, 4000);
-      //   return;
-      // }
-
-      // // 开始每5s轮询后端读取仿真结果（使用后端返回的 simulationId）
-      // const maxAttempts = 60; // 最大轮询次数（5s * 60 = 5分钟）
-      // this.pollTimerId = setInterval(async () => {
-      //   this.pollAttempts += 1;
-      //   if (this.pollAttempts >= maxAttempts) {
-      //     // 超时停止
-      //     clearInterval(this.pollTimerId);
-      //     this.pollTimerId = null;
-      //     this.simRunning = false;
-      //     this.simFinished = false;
-      //     this.simResult = { power: null, coldTemp: null };
-      //     this.pollAttempts = 0;
-      //     this.simMessage = '仿真失败：超过最大重试次数';
-      //     // 保留错误提示一段时间
-      //     setTimeout(() => { this.simMessage = ''; }, 6000);
-      //     return;
-      //   }
-
-      //   try {
-      //     const r = await fetch(`/api/data/simulation-result-file/${simulationId}`);
-      //     if (r.ok) {
-      //       const wrapper = await r.json();
-      //       if (wrapper && wrapper.code === 0 && wrapper.data) {
-      //         const dto = wrapper.data;
-      //         const resP = parseFloat(dto.totalActivePower);
-      //         const resT = parseFloat(dto.coldWaterReturnTemp);
-      //         this.simResult = { power: resP, coldTemp: resT };
-      //         // 停止轮询
-      //         if (this.pollTimerId) {
-      //           clearInterval(this.pollTimerId);
-      //           this.pollTimerId = null;
-      //         }
-      //         // 不自动应用结果，展示成功信息并显示“应用仿真”操作
-      //         this.simRunning = false;
-      //         this.simFinished = true;
-      //         this.simMessage = '';
-      //         // 显示成功文字（模板会显示 simResult）
-      //       } else {
-      //         // 后端返回成功但 data 为空或 code 非0，视为未就绪或失败，继续轮询
-      //         console.debug('仿真结果尚未就绪或返回异常：', wrapper && wrapper.message);
-      //       }
-      //     } else if (r.status === 404) {
-      //       console.debug('后端未找到结果，继续轮询');
-      //     } else {
-      //       console.warn('读取仿真结果返回非OK状态', r.status);
-      //     }
-      //   } catch (err) {
-      //     console.warn('轮询过程中发生错误', err);
-      //   }
-      // }, 5000);
-
-      setTimeout(() => {
-        // 模拟仿真结果：基于目标值的随机波动，功率±5，温度±0.4，确保在合法范围
-        const powerVariation = (Math.random() - 0.5) * 10; // ±5
-        const tempVariation = (Math.random() - 0.5) * 0.8; // ±0.4
-
-        const resP = Math.max(30, Math.min(65, parseFloat((p + powerVariation).toFixed(1))));
-        const resT = Math.max(6, Math.min(12, parseFloat((t + tempVariation).toFixed(2))));
-
-        // 生成冷水流量和冷却水流量的随机值（假设合理范围）
-        const coldWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
-        const coolingWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
-
-        // 假设基础流量值，并确保在合理范围内
-        const baseColdWaterFlow = 5.0; // 基础冷水流量
-        const baseCoolingWaterFlow = 10.0; // 基础冷却水流量
-
-        this.coldWaterFlowRes = Math.max(3.0, Math.min(7.0, parseFloat((baseColdWaterFlow + coldWaterFlowVariation).toFixed(2))));
-        this.coolingWaterFlowRes = Math.max(8.0, Math.min(12.0, parseFloat((baseCoolingWaterFlow + coolingWaterFlowVariation).toFixed(2))));
-
-        this.simResult = {
-          power: resP,
-          coldTemp: resT
-        };
+        // 解析后端统一响应结构 ApiResponse<T>
+        const saveJson = await saveResp.json();
+        if (!saveJson || saveJson.code !== 0 || saveJson.data == null) {
+          throw new Error(`后端返回错误: ${saveJson ? saveJson.message : '无返回内容'}`);
+        }
+        simulationId = saveJson.data;
+      } catch (err) {
+        this.simMessage = '仿真请求失败：' + (err.message || err);
         this.simRunning = false;
-        this.simFinished = true;
-        this.simMessage = '';
+        setTimeout(() => { this.simMessage = ''; }, 4000);
+        return;
+      }
+
+      // 开始每5s轮询后端读取仿真结果（使用后端返回的 simulationId）
+      const maxAttempts = 60; // 最大轮询次数（5s * 60 = 5分钟）
+      this.pollTimerId = setInterval(async () => {
+        this.pollAttempts += 1;
+        if (this.pollAttempts >= maxAttempts) {
+          // 超时停止
+          clearInterval(this.pollTimerId);
+          this.pollTimerId = null;
+          this.simRunning = false;
+          this.simFinished = false;
+          this.simResult = { power: null, coldTemp: null };
+          this.pollAttempts = 0;
+          this.simMessage = '仿真失败：超过最大重试次数';
+          // 保留错误提示一段时间
+          setTimeout(() => { this.simMessage = ''; }, 6000);
+          return;
+        }
+
+        try {
+          const r = await fetch(`/api/data/simulation-result-file/${simulationId}`);
+          if (r.ok) {
+            const wrapper = await r.json();
+            if (wrapper && wrapper.code === 0 && wrapper.data) {
+              const dto = wrapper.data;
+              const resP = parseFloat(dto.totalActivePower);
+              const resT = parseFloat(dto.coldWaterReturnTemp);
+              this.simResult = { power: resP, coldTemp: resT };
+              // 生成冷水流量和冷却水流量的随机值（假设合理范围）
+              const coldWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
+              const coolingWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
+
+              // 假设基础流量值，并确保在合理范围内
+              const baseColdWaterFlow = 5.0; // 基础冷水流量
+              const baseCoolingWaterFlow = 10.0; // 基础冷却水流量
+
+              this.coldWaterFlowRes = Math.max(3.0, Math.min(7.0, parseFloat((baseColdWaterFlow + coldWaterFlowVariation).toFixed(2))));
+              this.coolingWaterFlowRes = Math.max(8.0, Math.min(12.0, parseFloat((baseCoolingWaterFlow + coolingWaterFlowVariation).toFixed(2))));
+              // 停止轮询
+              if (this.pollTimerId) {
+                clearInterval(this.pollTimerId);
+                this.pollTimerId = null;
+              }
+              // 不自动应用结果，展示成功信息并显示“应用仿真”操作
+              this.simRunning = false;
+              this.simFinished = true;
+              this.simMessage = '';
+              // 显示成功文字（模板会显示 simResult）
+            } else {
+              // 后端返回成功但 data 为空或 code 非0，视为未就绪或失败，继续轮询
+              console.debug('仿真结果尚未就绪或返回异常：', wrapper && wrapper.message);
+            }
+          } else if (r.status === 404) {
+            console.debug('后端未找到结果，继续轮询');
+          } else {
+            console.warn('读取仿真结果返回非OK状态', r.status);
+          }
+        } catch (err) {
+          console.warn('轮询过程中发生错误', err);
+        }
       }, 5000);
+
+      // setTimeout(() => {
+      //   // 模拟仿真结果：基于目标值的随机波动，功率±5，温度±0.4，确保在合法范围
+      //   const powerVariation = (Math.random() - 0.5) * 10; // ±5
+      //   const tempVariation = (Math.random() - 0.5) * 0.8; // ±0.4
+
+      //   const resP = Math.max(30, Math.min(65, parseFloat((p + powerVariation).toFixed(1))));
+      //   const resT = Math.max(6, Math.min(12, parseFloat((t + tempVariation).toFixed(2))));
+
+      //   // 生成冷水流量和冷却水流量的随机值（假设合理范围）
+      //   const coldWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
+      //   const coolingWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
+
+      //   // 假设基础流量值，并确保在合理范围内
+      //   const baseColdWaterFlow = 5.0; // 基础冷水流量
+      //   const baseCoolingWaterFlow = 10.0; // 基础冷却水流量
+
+      //   this.coldWaterFlowRes = Math.max(3.0, Math.min(7.0, parseFloat((baseColdWaterFlow + coldWaterFlowVariation).toFixed(2))));
+      //   this.coolingWaterFlowRes = Math.max(8.0, Math.min(12.0, parseFloat((baseCoolingWaterFlow + coolingWaterFlowVariation).toFixed(2))));
+
+      //   this.simResult = {
+      //     power: resP,
+      //     coldTemp: resT
+      //   };
+      //   this.simRunning = false;
+      //   this.simFinished = true;
+      //   this.simMessage = '';
+      // }, 5000);
     },
 
     // 应用仿真结果到输入并开始逼近
