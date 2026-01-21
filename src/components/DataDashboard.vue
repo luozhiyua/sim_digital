@@ -558,26 +558,21 @@
               <span>故障复位</span>
             </button> -->
         </div>
-        <!-- 新增目标控制面板 -->
+        <!-- 右侧目标显示（保留原样式，但不可编辑，显示实时值） -->
         <div class="target-control-panel">
           <div class="control-row">
             <label class="control-label">净发电功率 (kW)</label>
-            <input v-model="targetPowerInput" class="control-input" placeholder="30-65" @input="hasInputChanged = true"/>
+            <input class="control-input" :value="systemData[currentSystemState].generator.powerTotalValue !== undefined ? systemData[currentSystemState].generator.powerTotalValue.toFixed(1) : systemData[currentSystemState].generator.powerTotal" readonly disabled />
           </div>
           <div class="control-row">
             <label class="control-label">冷水供水温度 (℃)</label>
-            <input v-model="targetColdTempInput" class="control-input" placeholder="6-12" @input="hasInputChanged = true"/>
+            <input class="control-input" :value="systemData[currentSystemState].lithium.coldInTempValue !== undefined ? systemData[currentSystemState].lithium.coldInTempValue.toFixed(1) : systemData[currentSystemState].lithium.coldInTemp" readonly disabled />
           </div>
-          <div class="control-actions">
-            <!-- <button class="dashboard-button primary" :disabled="!canConfirm || simRunning || !hasInputChanged" @click="confirmTargets">确定</button> -->
-            <button class="dashboard-button primary" :disabled="!canConfirm || simRunning" @click="startSimulation">开始仿真</button>
-          </div>
-          <div class="sim-status">
-            <div v-if="simRunning">仿真中，请稍候</div>
-            <div v-else-if="simMessage">{{ simMessage }}</div>
-            <div v-if="simFinished">
-              <div class="sim-result">仿真成功！结果为：净发电功率 {{ simResult.power }} kW，冷水供水温度 {{ simResult.coldTemp }} ℃</div>
-              <div class="sim-apply-link" role="button" tabindex="0" @click="applySimulationResult">应用仿真</div>
+          <div class="control-row" style="margin-top:10px;">
+            <div class="data-value" style="font-weight:700;">
+              <span v-if="simRunning">仿真中</span>
+              <span v-else-if="simFinished">仿真成功！结果为：冷水流量 {{ simResult.power }} kW，冷却水流量 {{ simResult.coldTemp }} ℃</span>
+              <span v-else>等待仿真</span>
             </div>
           </div>
         </div>
@@ -1484,6 +1479,7 @@ export default {
     this.nextRefreshAt = Date.now() + this.refreshIntervalMs;
     this.refreshTimerId = setInterval(() => {
       this.updateRealTimeData();
+      this.startSimulation();
       this.nextRefreshAt = Date.now() + this.refreshIntervalMs;
     }, this.refreshIntervalMs);
 
@@ -1939,19 +1935,12 @@ export default {
             const wrapper = await r.json();
             if (wrapper && wrapper.code === 0 && wrapper.data) {
               const dto = wrapper.data;
+              // 实际展示的是冷水流量和冷却水流量
               const resP = parseFloat(dto.totalActivePower);
               const resT = parseFloat(dto.coldWaterReturnTemp);
               this.simResult = { power: resP, coldTemp: resT };
-              // 生成冷水流量和冷却水流量的随机值（假设合理范围）
-              const coldWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
-              const coolingWaterFlowVariation = (Math.random() - 0.5) * 2; // ±1
-
-              // 假设基础流量值，并确保在合理范围内
-              const baseColdWaterFlow = 5.0; // 基础冷水流量
-              const baseCoolingWaterFlow = 10.0; // 基础冷却水流量
-
-              this.coldWaterFlowRes = Math.max(3.0, Math.min(7.0, parseFloat((baseColdWaterFlow + coldWaterFlowVariation).toFixed(2))));
-              this.coolingWaterFlowRes = Math.max(8.0, Math.min(12.0, parseFloat((baseCoolingWaterFlow + coolingWaterFlowVariation).toFixed(2))));
+              this.coldWaterFlowRes = resP;
+              this.coolingWaterFlowRes = resT;
               // 停止轮询
               if (this.pollTimerId) {
                 clearInterval(this.pollTimerId);
