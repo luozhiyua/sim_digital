@@ -1686,10 +1686,22 @@ export default {
     // 更新日期时间
     updateDateTime() {
       const now = new Date();
-      // 格式化日期：YYYY-MM-DD 星期X
-      this.currentDate = `2026-02-02 星期一`;
-      // 格式化时间：HH:MM:SS
-      this.currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      // 1. 格式化日期：YYYY-MM-DD
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份从0开始，要+1
+      const day = String(now.getDate()).padStart(2, '0');
+
+      // 2. 获取星期：星期X
+      const weekArr = ['日', '一', '二', '三', '四', '五', '六'];
+      const week = weekArr[now.getDay()];
+
+      // 3. 格式化时间：HH:MM
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+
+      // 赋值
+      this.currentDate = `${year}-${month}-${day} 星期${week}`;
+      this.currentTime = `${hours}:${minutes}`;
     },
     // 切换数据点标签的显示状态
     toggleDataLabels(pointName) {
@@ -2087,28 +2099,28 @@ export default {
       //   }
       // }, 5000);
 
-      const payload = {
-        powerPriority: parseFloat(this.powerPriorityTmp),
-        coolingPriority: parseFloat(this.coolingPriorityTmp),
-        heatingPriority: parseFloat(this.heatingPriorityTmp),
-        gasLimit: parseFloat(this.gasLimitTmp),
-        pumpFlow: parseFloat(this.pumpFlowTmp),
-        smokeTemp: parseFloat(this.smokeTempTmp)
-      };
-      try {
-        const simulationResp = await fetch('/api/data/simulation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+      // const payload = {
+      //   powerPriority: parseFloat(this.powerPriorityTmp),
+      //   coolingPriority: parseFloat(this.coolingPriorityTmp),
+      //   heatingPriority: parseFloat(this.heatingPriorityTmp),
+      //   gasLimit: parseFloat(this.gasLimitTmp),
+      //   pumpFlow: parseFloat(this.pumpFlowTmp),
+      //   smokeTemp: parseFloat(this.smokeTempTmp)
+      // };
+      // try {
+      //   const simulationResp = await fetch('/api/data/simulation', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/json' },
+      //     body: JSON.stringify(payload)
+      //   });
 
-        if (!simulationResp.ok) {
-          throw new Error(`${simulationResp.status}`);
-        }
-      } catch (err) {
-        alert(`优化计算请求失败：${err.message}`);
-        return;
-      }
+      //   if (!simulationResp.ok) {
+      //     throw new Error(`${simulationResp.status}`);
+      //   }
+      // } catch (err) {
+      //   alert(`优化计算请求失败：${err.message}`);
+      //   return;
+      // }
 
       setTimeout(() => {
         // 模拟仿真结果
